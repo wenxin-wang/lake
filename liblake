@@ -26,7 +26,7 @@ lake() {
         pkgname=$pkg
     fi
 
-    pkgdir=$pkgs/$pkgname 
+    pkgdir=$pkgs/$pkgname
     verdir=$pkgdir/$pkgver
     cmdfile=$verdir/${pkg}-${arch}
     listname=${pkg}-${arch}.list
@@ -60,7 +60,7 @@ lake() {
             install_list $fakeroot/$pkg/$arch $listfile
             ln -sv $listfile $currents ;;
         _remove)
-            if [[ z"$pkgver" == z ]] 
+            if [[ z"$pkgver" == z ]]
             then
                 echo "remove: must specify version"
                 exit $E_WARGS
@@ -106,11 +106,11 @@ mk_dir() {
 
 mkpkgdir() {
     # create pkgdir, add ver/deps
-    
+
     echo $pkgdir
     mk_dir $pkgdir
     mk_dir $pkgdir/log
-    
+
     echo $verdir
     mk_dir $verdir
     touch $verdir/deps
@@ -137,14 +137,9 @@ gen_list() {
         exit $E_BADFILE
     fi
 
-    if [ $dir -nt $file ]
-    then 
-        find $dir > $file
-        sed -i "s@^$dir@@" $file
-        sed -i "/^$/d" $file
-    else
-        echo "$dir not newer than $file, not updated"
-    fi
+    find $dir > $file
+    sed -i "s@^$dir@@" $file
+    sed -i "/^$/d" $file
 }
 
 install_list() {
@@ -169,7 +164,7 @@ install_list() {
         cp $list $tmp
     fi
 
-    cat $tmp | while read file
+    while read -u 4 file
     do
         if [ ! -e $dir/$file ]
         then
@@ -183,13 +178,13 @@ install_list() {
             if [ -e $file ]
             then
                 echo $file exists
-                protect_default_arch $file && cp --preserve=mode --no-dereference $dir/$file $file || echo $file >> $list.failed
+                handle_collision $file && cp --preserve=mode --no-dereference $dir/$file $file || echo $file >> $list.failed
             else
                 cp --preserve=mode --no-dereference $dir/$file $file
             fi
         fi
         sed -i "1d" $tmp
-    done
+    done 4<$tmp
 
     if [ -s $list.failed ]
     then
@@ -281,49 +276,74 @@ mkcmd() {
     fi
 }
 
-check_arch_conflict() {
+find_collision() {
     if [ $# -ne 1 ]
     then
         return $E_WARGS
     fi
 
-    local ver
-    local a
+    local line=$(head -n1 <<< $(grep "^$1$" $currents/*))
+    local list=$(cut -d":" -f1 <<< "$line")
 
-    grep -v $arch $pkgdir/current | while read line && [ ! -z "$line" ]
-    do
-        ver=$(cut -d' ' -f1 <<< "$line")
-        a=$(cut -d' ' -f2 <<< "$line")
-        if grep -q $1 $pkgdir/$ver/${pkgname}-${ver}-${a}.list
-        then
-            echo $line
-            return 0
-        fi
-    done
+    if [[ "z$list" == "z" ]]
+    then
+        return 0
+    fi
+
+    list=$(basename ${list%.*})
+
+    echo $list
 }
 
-protect_default_arch() {  # this is not good enough
+handle_collision() {  # this is not good enough
     if [ $# -ne 1 ]
     then
         return $E_WARGS
     fi
 
-    local conflict=$(check_arch_conflict $1)
+    local conflict=$(find_collision $1)
 
-    if [ ! "$conflict" ]
+    if [ z"$conflict" == z"${pkg}-${arch}" ]
     then
-        return 1
+        return 0
     fi
 
-    local ver=$(cut -d' ' -f1 <<< "$conflict")
-    local a=$(cut -d' ' -f2 <<< "$conflict")
-
-    if [[ $a != $DEFAULT_ARCH ]]
+    if [ "$conflict" ]
     then
-        echo "\%$1%d" 
-        sed -i "\%^$1$%d" $pkgdir/$ver/${pkgname}-${ver}-${a}.list
-        rm $1
-        echo $1 removed from ${pkgname}-${ver}-${a}
-        return 0
+        echo -n "$1 is in $conflict. Replace it? [y/n] "
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    sed -i "\%^$1$%d" $currents/${conflict}.list
+                    rm $1
+                    echo $1 removed from $conflict
+                    return 0 ;;
+                n|N)
+                    echo $1 kept in $conflict
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
+    else
+        echo -n "$1 is not found in any packages. Replace it? [y/n] "
+
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    rm $1
+                    echo $1 removed
+                    return 0 ;;
+                n|N)
+                    echo $1 kept
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
     fi
 }
