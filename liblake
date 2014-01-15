@@ -74,12 +74,12 @@ lake() {
             then
                 echo "$pkgname $pkgver $arch not installed"
             else
-                remove_list $listfile
+                remove_list $currents/$listname
                 rm $currents/$listname
             fi
             ;;
         *)
-            echo "$cmd" ;;
+            echo "$cmd not recognized" ;;
     esac
 }
 
@@ -264,14 +264,15 @@ prepare_dir() {
 is_ready() {
     if [ -f $cmdfile ]
     then
+        echo "Ready"
         return 0
     else
+        echo "Not Ready"
         return 1
     fi
 }
 
 create_list() {
-    prepare_dir
     gen_list $fakeroot/$pkg/$arch $listfile
 }
 
