@@ -32,7 +32,7 @@ lake() {
     listname=${pkg}-${arch}.list
     listfile=$verdir/$listname
 
-    if [ "$cmd" != "prepare" -a ! is_ready ]
+    if [ "$cmd" != "prepare" ] && ! is_ready
     then
         echo "$cmdfile not ready. Run \"lake prepare $pkg\" first"
         exit $E_NOTREADY
@@ -264,10 +264,8 @@ prepare_dir() {
 is_ready() {
     if [ -f $cmdfile ]
     then
-        echo "Ready"
         return 0
     else
-        echo "Not Ready"
         return 1
     fi
 }
