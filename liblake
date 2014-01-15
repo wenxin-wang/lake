@@ -1,0 +1,330 @@
+# vim: filetype=sh
+
+# Error Codes
+E_WARGS=1
+E_BADDIR=85
+E_BADFILE=86
+E_BADARCH=87
+E_NOTREADY=88
+
+DEFAULT_ARCH=x86_64
+
+lake() {
+    pkg=$(basename $pkg)
+
+    if [[ $pkg == *-* ]]
+    then
+        pkgver=${pkg##*-}
+        if [[ $pkgver == [0-9]* ]]
+        then
+            pkgname=${pkg%-$pkgver}
+        else
+            pkgname=$pkg
+            pkgver=""
+        fi
+    else
+        pkgname=$pkg
+    fi
+
+    pkgdir=$pkgs/$pkgname 
+    verdir=$pkgdir/$pkgver
+    cmdfile=$verdir/${pkg}-${arch}
+    listname=${pkg}-${arch}.list
+    listfile=$verdir/$listname
+
+    if [ "$cmd" != "prepare" -a ! is_ready ]
+    then
+        echo "$cmdfile not ready. Run \"lake prepare $pkg\" first"
+        exit $E_NOTREADY
+    fi
+
+    case "_$cmd" in
+        _print)
+            echo $pkgname $pkgver $arch
+            ;;
+        _prepare)
+            prepare_dir
+            ;;
+        _createlist)
+            create_list
+            ;;
+        _create)
+            create_list
+            cd $fakeroot/$pkg/$arch
+            tar cjf $verdir/${pkg}-${arch}.tar.bz2 *
+            ;;
+        _backup)
+            ;;
+        _install)
+            create_list
+            install_list $fakeroot/$pkg/$arch $listfile
+            ln -sv $listfile $currents ;;
+        _remove)
+            if [[ z"$pkgver" == z ]] 
+            then
+                echo "remove: must specify version"
+                exit $E_WARGS
+            elif [ ! -d $pkgdir ]
+            then
+                echo "$pkgname doesn't exist"
+                exit $E_WARGS
+            fi
+
+            if [ ! -e $currents/$listname ]
+            then
+                echo "$pkgname $pkgver $arch not installed"
+            else
+                remove_list $listfile
+                rm $currents/$listname
+            fi
+            ;;
+        *)
+            echo "$cmd" ;;
+    esac
+}
+
+
+mk_dir() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local dir=$1
+    if [ ! -e $dir ]
+    then
+        mkdir $dir
+        echo "create $dir"
+    elif [ ! -d $dir ]
+    then
+        echo "$dir not a directory"
+        exit $E_BADDIR
+    else
+        echo "directory $dir exists"
+    fi
+}
+
+mkpkgdir() {
+    # create pkgdir, add ver/deps
+    
+    echo $pkgdir
+    mk_dir $pkgdir
+    mk_dir $pkgdir/log
+    
+    echo $verdir
+    mk_dir $verdir
+    touch $verdir/deps
+}
+
+gen_list() {
+    if [ $# -ne 2 ]
+    then
+        echo "usage: $0 dirname filename"
+        exit 1
+    fi
+
+    local dir=$(realpath $1)
+    local file=$2
+    if [ ! -d $dir ]
+    then
+        echo "$dir not a directory"
+        exit $E_BADDIR
+    fi
+
+    if [ -e $file -a ! -f $file ]
+    then
+        echo "$file not a regular file"
+        exit $E_BADFILE
+    fi
+
+    if [ $dir -nt $file ]
+    then 
+        find $dir > $file
+        sed -i "s@^$dir@@" $file
+        sed -i "/^$/d" $file
+    else
+        echo "$dir not newer than $file, not updated"
+    fi
+}
+
+install_list() {
+    if [ $# -ne 2 ]
+    then
+        echo "usage: $0 filesdir listname"
+        exit 1
+    fi
+
+    local dir=$1
+    local list=$2
+    local tmp=${list}.tmp # notice that $list is probably in its absolute path
+
+    if [ ! -s $list ]
+    then
+        echo "Nothing to install"
+        exit 0
+    fi
+
+    if [ ! -s $tmp ]
+    then
+        cp $list $tmp
+    fi
+
+    cat $tmp | while read file
+    do
+        if [ ! -e $dir/$file ]
+        then
+            echo $dir/$file not found
+            exit $E_BADFILE
+        elif [ -d $dir/$file -a ! -L $dir/$file ]
+        then
+            mk_dir $file
+        else
+            echo install $file
+            if [ -e $file ]
+            then
+                echo $file exists
+                protect_default_arch $file && cp --preserve=mode --no-dereference $dir/$file $file || echo $file >> $list.failed
+            else
+                cp --preserve=mode --no-dereference $dir/$file $file
+            fi
+        fi
+        sed -i "1d" $tmp
+    done
+
+    if [ -s $list.failed ]
+    then
+        echo "-----------failed--------------------"
+        cat $list.failed
+    fi
+
+    rm $tmp
+}
+
+remove_list() {
+    if [ $# -ne 1 ]
+    then
+        echo "usage: $0 listname"
+        exit 1
+    fi
+
+    local list=$1
+    local tmp=${list}.tmp # notice that $list is probably in its absolute path
+
+    local file
+
+    if [ ! -s $list ]
+    then
+        echo "Nothing to remove"
+        exit 0
+    fi
+
+    if [ ! -s $tmp ]
+    then
+        cp $list $tmp
+    fi
+
+    tac $tmp | while read file
+    do
+        if [ ! -e $file ]
+        then
+            echo $file not found
+        elif [ -d $file ]
+        then
+            if [ ! "$(ls -A $file)" ]
+            then
+                echo remove $file
+                rm -r $file
+            else
+                echo directory $file not empty, leave it alone
+            fi
+        else
+            echo remove $file
+            rm $file
+        fi
+        sed -i "$ d" $tmp
+    done
+
+    if [ -e ${list}.failed ]
+    then
+        mv ${list}.failed{,.old}
+    fi
+
+    rm $tmp # remove tmp last, so $dirs will not be overwited when interrupted during dir cleaning
+}
+
+prepare_dir() {
+    if ! is_ready
+    then
+        echo "not ready"
+        mkpkgdir
+        mkcmd
+    fi
+}
+
+is_ready() {
+    if [ -f $cmdfile ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+create_list() {
+    prepare_dir
+    gen_list $fakeroot/$pkg/$arch $listfile
+}
+
+mkcmd() {
+    if [ ! -e $cmdfile ]
+    then
+        . /usr/local/lib/mkcmd-${arch}.sh
+    fi
+}
+
+check_arch_conflict() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local ver
+    local a
+
+    grep -v $arch $pkgdir/current | while read line && [ ! -z "$line" ]
+    do
+        ver=$(cut -d' ' -f1 <<< "$line")
+        a=$(cut -d' ' -f2 <<< "$line")
+        if grep -q $1 $pkgdir/$ver/${pkgname}-${ver}-${a}.list
+        then
+            echo $line
+            return 0
+        fi
+    done
+}
+
+protect_default_arch() {  # this is not good enough
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local conflict=$(check_arch_conflict $1)
+
+    if [ ! "$conflict" ]
+    then
+        return 1
+    fi
+
+    local ver=$(cut -d' ' -f1 <<< "$conflict")
+    local a=$(cut -d' ' -f2 <<< "$conflict")
+
+    if [[ $a != $DEFAULT_ARCH ]]
+    then
+        echo "\%$1%d" 
+        sed -i "\%^$1$%d" $pkgdir/$ver/${pkgname}-${ver}-${a}.list
+        rm $1
+        echo $1 removed from ${pkgname}-${ver}-${a}
+        return 0
+    fi
+}

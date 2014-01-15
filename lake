@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# lake installs, remove, create and backup pkg archives.
+
+## global variables
+# $pkgs: where all pkg instructions, filelists, etc. rest
+# $pkg: like foo-bar, foo-bar-3-3.1, foobar3-3.1
+# $fakeroot: $fakeroot/$pkg will be like /
+# $pkgname: respectively foo-bar, foo-bar-3, foobar3
+# $pkgver: respectively "", 3.1, 3.1
+# $pkgdir: $pkgs/$pkgname
+# $verdir: $pkgs/$pkgname/$pkgver
+# $list: like foo-bar.list
+
+. /usr/local/lib/liblake
+
+usage() {
+    cat <<EOF
+usage: lake [install|remove|create|backup] pkgname
+EOF
+}
+
+if [ $# -lt 1 ]
+then
+    usage
+    exit $E_WARGS
+fi
+
+while [ $# -gt 0 ]
+do
+    arg=$1
+    case "$arg" in
+        -h|-H|--help|help) usage; exit 0
+            ;;
+        -a)
+            shift
+            arch=$1
+            if [[ z"$arch" == z ]]
+            then
+                echo "No arch specified"
+                exit $E_BADARCH
+            fi
+            ;;
+        print|install|remove|create|createlist|backup|prepare)
+            cmd=$arg
+            shift
+            pkglist="$@"
+            break
+            ;;
+        *) echo "unknown instruction $1"; usage; exit $E_WARGS
+            ;;
+    esac
+    shift
+done
+
+if [[ z"$cmd" == z ]]
+then
+    echo "No cmd feeded"
+    exit $E_WARGS
+fi
+
+if [[ z"$pkglist" == z ]]
+then
+    echo "No pkg feeded"
+    exit $E_WARGS
+fi
+
+pkgs=/var/pkgs
+fakeroot=$pkgs/sysroot
+currents=$pkgs/current
+
+case "$arch" in
+    "") arch=$DEFAULT_ARCH
+        ;;
+    x86_64|x64|64) arch=x86_64
+        ;;
+    i386|x86|32) arch=x86
+        ;;
+    *) echo "arch \"$arch\" not known"
+        exit $E_BADARCH
+        ;;
+esac
+
+for pkg in $pkglist
+do
+    lake
+done
