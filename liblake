@@ -28,8 +28,9 @@ lake() {
 
     pkgdir=$pkgs/$pkgname
     verdir=$pkgdir/$pkgver
-    cmdfile=$verdir/${pkg}-${arch}
-    listname=${pkg}-${arch}.list
+    pkgfname=${pkgname}-${pkgver}-${arch}
+    cmdfile=$verdir/$pkgfname
+    listname=${pkgfname}.list
     listfile=$verdir/$listname
 
     if [ "$cmd" != "prepare" ] && ! is_ready
@@ -40,7 +41,7 @@ lake() {
 
     case "_$cmd" in
         _print)
-            echo $pkgname $pkgver $arch
+            echo $pkgfname
             ;;
         _prepare)
             prepare_dir
@@ -51,7 +52,7 @@ lake() {
         _create)
             create_list
             cd $fakeroot/$pkg/$arch
-            tar cjf $verdir/${pkg}-${arch}.tar.bz2 *
+            tar cjf $verdir/${pkgfname}.tar.bz2 *
             ;;
         _checkconflict)
             check_collision $listfile
@@ -116,6 +117,7 @@ mkpkgdir() {
 
     echo $verdir
     mk_dir $verdir
+    mk_dir $pkgdir/backup
     touch $verdir/deps
 }
 
@@ -290,24 +292,28 @@ check_collision() {
 
     local list=$1
     local file
+    local conffile=${listfile}.conflict
     local conflict
 
-    echo > ${listfile}.conflict
+    : > $conffile
 
     while read file
     do
         if [ ! -d $file -a -e $file ]
         then
-            echo -n $file >> ${listfile}.conflict
             conflict=$(find_belongs $file)
-            if [ "$conflict" ]
+            if [ "$conflict" != "$pkgfname" ]
             then
-                echo " # $conflict" >> ${listfile}.conflict
-            else
-                echo '' >> ${listfile}.conflict
+                echo "$file $conflict" >> $conffile
             fi
         fi
     done <$list
+
+    if [ "$(cut -d' ' -f1 <<<$(wc -l $conffile))" -gt "0" ]
+    then
+        vim $conffile
+        handle_conffile $conffile
+    fi
 }
 
 find_belongs() {
@@ -327,6 +333,51 @@ find_belongs() {
     list=$(basename ${list%.*})
 
     echo $list
+}
+
+handle_conffile() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+    local conffile=$1
+    local file
+    local cpkg
+
+    while read line
+    do
+        file=$(cut -d' ' -f1 <<<"$(sed -e 's/^#//' <<<$line)")
+        cpkg=$(cut -d' ' -f2 <<<"$(sed -e 's/^#//' <<<$line)")
+        if grep -q '^#' <<<"$line" # with '#', we mean that we want to keep the old file
+        then
+            echo "Will keep old $file"
+            recollect_file $file $pkgfname "conflict"
+        else
+            echo "Will remove old $file"
+            recollect_file $file $cpkg "conflict"
+        fi
+    done <$conffile
+}
+
+recollect_file() {
+    if [ $# -lt 3 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local p=$(cut -d'-' -f1 <<<"$2")
+    local v=$(cut -d'-' -f2 <<<"$2")
+    local a=$(cut -d'-' -f3 <<<"$2")
+    local f=$p-$v-$a
+    local vd=$pkgs/$p/$v
+    local list=$vd/${f}.list
+    local name=$3
+
+    echo removing $file from $p $v $a
+    sed -i "s@^${line}$@@" $list &&
+    tar rf $file $vd/backup/$f-$name.tar &&
+    rm $file
 }
 
 handle_collision() {  # this is not good enough
