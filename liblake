@@ -53,6 +53,9 @@ lake() {
             cd $fakeroot/$pkg/$arch
             tar cjf $verdir/${pkg}-${arch}.tar.bz2 *
             ;;
+        _checkconflict)
+            check_collision $listfile
+            ;;
         _backup)
             ;;
         _install)
@@ -152,6 +155,7 @@ install_list() {
     local dir=$1
     local list=$2
     local tmp=${list}.tmp # notice that $list is probably in its absolute path
+    local file
 
     if [ ! -s $list ]
     then
@@ -163,6 +167,8 @@ install_list() {
     then
         cp $list $tmp
     fi
+
+    check_collision $list
 
     while read -u 4 file
     do
@@ -276,7 +282,35 @@ mkcmd() {
     fi
 }
 
-find_collision() {
+check_collision() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local list=$1
+    local file
+    local conflict
+
+    echo > ${listfile}.conflict
+
+    while read file
+    do
+        if [ ! -d $file -a -e $file ]
+        then
+            echo -n $file >> ${listfile}.conflict
+            conflict=$(find_belongs $file)
+            if [ "$conflict" ]
+            then
+                echo " # $conflict" >> ${listfile}.conflict
+            else
+                echo '' >> ${listfile}.conflict
+            fi
+        fi
+    done <$list
+}
+
+find_belongs() {
     if [ $# -ne 1 ]
     then
         return $E_WARGS
@@ -301,7 +335,7 @@ handle_collision() {  # this is not good enough
         return $E_WARGS
     fi
 
-    local conflict=$(find_collision $1)
+    local conflict=$(find_belongs $1)
 
     if [ z"$conflict" == z"${pkg}-${arch}" ]
     then

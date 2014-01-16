@@ -41,7 +41,7 @@ do
                 exit $E_BADARCH
             fi
             ;;
-        print|install|remove|create|createlist|backup|prepare)
+        print|install|remove|create|createlist|backup|prepare|checkconflict)
             cmd=$arg
             shift
             pkglist="$@"
