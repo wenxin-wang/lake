@@ -124,27 +124,33 @@ mkpkgdir() {
 gen_list() {
     if [ $# -ne 2 ]
     then
-        echo "usage: $0 dirname filename"
+        echo "usage: $0 dirname listname"
         exit 1
     fi
 
     local dir=$(realpath $1)
-    local file=$2
+    local list=$2
     if [ ! -d $dir ]
     then
         echo "$dir not a directory"
         exit $E_BADDIR
     fi
 
-    if [ -e $file -a ! -f $file ]
+    if [ -e $list -a ! -f $list ]
     then
         echo "$file not a regular file"
         exit $E_BADFILE
     fi
 
-    find $dir > $file
-    sed -i "s@^$dir@@" $file
-    sed -i "/^$/d" $file
+    if [ $list -nt $dir ]
+    then
+        echo "$list newer than $dir, not updated"
+        return 0
+    fi
+
+    find $dir > $list
+    sed -i "s@^$dir@@" $list
+    sed -i "/^$/d" $list
 }
 
 install_list() {
