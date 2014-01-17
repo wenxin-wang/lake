@@ -370,9 +370,9 @@ handle_conffile() {
             echo "Will remove old $file"
             if [ z"$cpkg" == z ]
             then
-                recollect_file $file $cpkg "conflict"
-            else
                 sys_backup_file $file "conflict"
+            else
+                recollect_file $file $cpkg "conflict"
             fi
         fi
     done <$conffile
