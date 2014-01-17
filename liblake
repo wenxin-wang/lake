@@ -178,15 +178,15 @@ install_list() {
         exit 0
     fi
 
+    check_for_info $list
+    check_collision $list
+
     if [ ! -s $tmp ]
     then
         cp $list $tmp
         rm $list.failed
     fi
 
-    check_for_info $list
-
-    check_collision $list
 
     while read -u 4 file
     do
