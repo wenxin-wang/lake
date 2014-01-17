@@ -405,7 +405,7 @@ rm_from_fakeroot() {
     sed -i "\:^${file}$:d" $listfile &&
 
     file=${file#/}
-    tar -C $fakeroot -rf $vd/backup/$pkgfname-$name.tar $file &&
+    tar -C $fakeroot -rf $verdir/backup/$pkgfname-$name.tar $file &&
     rm $fakeroot/$file
 }
 
