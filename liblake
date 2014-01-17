@@ -516,5 +516,5 @@ install_info_dir() {
         done < $list
     fi
 
-    #rm $list
+    rm $list
 }
