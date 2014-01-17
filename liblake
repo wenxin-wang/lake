@@ -61,6 +61,11 @@ lake() {
         _backup)
             ;;
         _install)
+            if [ -e $currents/$listname ]
+            then
+                echo $pkgfname already installed
+                return 0
+            fi
             create_list
             install_list $fakeroot $listfile
             ln -sv $listfile $currents ;;
@@ -363,13 +368,32 @@ handle_conffile() {
             rm_from_fakeroot $file "conflict"
         else
             echo "Will remove old $file"
-            recollect_file $file $cpkg "conflict"
+            if [ z"$cpkg" == z ]
+            then
+                recollect_file $file $cpkg "conflict"
+            else
+                sys_backup_file $file "conflict"
+            fi
         fi
     done <$conffile
 }
 
+sys_backup_file() {
+    if [ $# -lt 2 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local name=$2
+
+    echo removing $file from system
+    tar rf $pkgs/backup/$name.tar $file &&
+    rm $file
+}
+
 rm_from_fakeroot() {
-    if [ $# -lt 3 ]
+    if [ $# -lt 2 ]
     then
         return $E_WARGS
     fi
@@ -378,7 +402,6 @@ rm_from_fakeroot() {
     local name=$2
 
     echo removing $file from $pkgfname
-    echo "\:^${file}$:d" $listfile
     sed -i "\:^${file}$:d" $listfile &&
 
     file=${file#/}
@@ -402,7 +425,6 @@ recollect_file() {
     local name=$3
 
     echo removing $file from $p $v $a
-    echo "\:^${file}$:d" $list
     sed -i "\:^${file}$:d" $list &&
     tar rf $vd/backup/$f-$name.tar $file &&
     rm $file
