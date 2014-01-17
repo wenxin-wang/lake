@@ -184,6 +184,8 @@ install_list() {
         rm $list.failed
     fi
 
+    check_for_info $list
+
     check_collision $list
 
     while read -u 4 file
@@ -207,6 +209,8 @@ install_list() {
         fi
         sed -i "1d" $tmp
     done 4<$tmp
+
+    install_info_dir ${list}.info
 
     if [ -s $list.failed ]
     then
@@ -481,4 +485,36 @@ handle_collision() {  # this is not good enough
             esac
         done
     fi
+}
+
+check_for_info() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local list=$1
+
+    grep "\.info$" $list > ${list}.info
+    sed -i "\:^${infodir}$:d" $list
+}
+
+install_info_dir() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local list=$1
+
+    if [ -s $list ]
+    then
+        echo install-info
+        while read infofile
+        do
+            install-info $infofile $infodir
+        done < $list
+    fi
+
+    #rm $list
 }

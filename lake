@@ -67,6 +67,7 @@ fi
 
 pkgs=/var/pkgs
 currents=$pkgs/current
+infodir=/usr/share/info/dir
 
 case "$arch" in
     "") arch=$DEFAULT_ARCH
