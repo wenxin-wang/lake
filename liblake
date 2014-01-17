@@ -176,6 +176,7 @@ install_list() {
     if [ ! -s $tmp ]
     then
         cp $list $tmp
+        rm $list.failed
     fi
 
     check_collision $list
@@ -376,10 +377,11 @@ rm_from_fakeroot() {
     local file=$1
     local name=$2
 
-    file=${file#/}
-
     echo removing $file from $pkgfname
-    sed -i "\:^${line}$:d" $listfile &&
+    echo "\:^${file}$:d" $listfile
+    sed -i "\:^${file}$:d" $listfile &&
+
+    file=${file#/}
     tar -C $fakeroot -rf $vd/backup/$pkgfname-$name.tar $file &&
     rm $fakeroot/$file
 }
@@ -396,11 +398,12 @@ recollect_file() {
     local a=$(cut -d'-' -f3 <<<"$2")
     local f=$p-$v-$a
     local vd=$pkgs/$p/$v
-    local list=$vd/${f}.list
+    local list=$pkgs/$p/$v/${f}.list
     local name=$3
 
     echo removing $file from $p $v $a
-    sed -i "\:^${line}$:d" $list &&
+    echo "\:^${file}$:d" $list
+    sed -i "\:^${file}$:d" $list &&
     tar rf $vd/backup/$f-$name.tar $file &&
     rm $file
 }
