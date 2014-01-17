@@ -32,6 +32,7 @@ lake() {
     cmdfile=$verdir/$pkgfname
     listname=${pkgfname}.list
     listfile=$verdir/$listname
+    fakeroot=$verdir/sysroot/$arch
 
     if [ "$cmd" != "prepare" ] && ! is_ready
     then
@@ -51,7 +52,7 @@ lake() {
             ;;
         _create)
             create_list
-            cd $fakeroot/$pkg/$arch
+            cd $fakeroot
             tar cjf $verdir/${pkgfname}.tar.bz2 *
             ;;
         _checkconflict)
@@ -61,7 +62,7 @@ lake() {
             ;;
         _install)
             create_list
-            install_list $fakeroot/$pkg/$arch $listfile
+            install_list $fakeroot $listfile
             ln -sv $listfile $currents ;;
         _remove)
             if [[ z"$pkgver" == z ]]
@@ -97,7 +98,7 @@ mk_dir() {
     local dir=$1
     if [ ! -e $dir ]
     then
-        mkdir $dir
+        mkdir -p $dir
         echo "create $dir"
     elif [ ! -d $dir ]
     then
@@ -117,7 +118,8 @@ mkpkgdir() {
 
     echo $verdir
     mk_dir $verdir
-    mk_dir $pkgdir/backup
+    mk_dir $verdir/backup
+    mk_dir $fakeroot
     touch $verdir/deps
 }
 
@@ -280,7 +282,7 @@ is_ready() {
 }
 
 create_list() {
-    gen_list $fakeroot/$pkg/$arch $listfile
+    gen_list $fakeroot $listfile
 }
 
 mkcmd() {
@@ -301,7 +303,7 @@ check_collision() {
     local conffile=${listfile}.conflict
     local conflict
 
-    : > $conffile
+    rm $conffile
 
     while read file
     do
@@ -315,7 +317,7 @@ check_collision() {
         fi
     done <$list
 
-    if [ "$(cut -d' ' -f1 <<<$(wc -l $conffile))" -gt "0" ]
+    if [ -f $conffile ] && [ "$(cut -d' ' -f1 <<<$(wc -l $conffile))" -gt "0" ]
     then
         vim $conffile
         handle_conffile $conffile
@@ -357,12 +359,29 @@ handle_conffile() {
         if grep -q '^#' <<<"$line" # with '#', we mean that we want to keep the old file
         then
             echo "Will keep old $file"
-            recollect_file $file $pkgfname "conflict"
+            rm_from_fakeroot $file "conflict"
         else
             echo "Will remove old $file"
             recollect_file $file $cpkg "conflict"
         fi
     done <$conffile
+}
+
+rm_from_fakeroot() {
+    if [ $# -lt 3 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local name=$2
+
+    file=${file#/}
+
+    echo removing $file from $pkgfname
+    sed -i "\:^${line}$:d" $listfile &&
+    tar -C $fakeroot -rf $vd/backup/$pkgfname-$name.tar $file &&
+    rm $fakeroot/$file
 }
 
 recollect_file() {
@@ -381,8 +400,8 @@ recollect_file() {
     local name=$3
 
     echo removing $file from $p $v $a
-    sed -i "s@^${line}$@@" $list &&
-    tar rf $file $vd/backup/$f-$name.tar &&
+    sed -i "\:^${line}$:d" $list &&
+    tar rf $vd/backup/$f-$name.tar $file &&
     rm $file
 }
 
