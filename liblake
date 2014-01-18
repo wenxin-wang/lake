@@ -328,7 +328,7 @@ check_collision() {
             conflict=$(find_belongs $file)
             if [ "$conflict" != "$pkgfname" ]
             then
-                echo "$file $conflict" >> $conffile
+                echo "$file : $conflict" >> $conffile
             fi
         fi
     done <$list
@@ -370,15 +370,15 @@ handle_conffile() {
 
     while read line
     do
-        file=$(cut -d' ' -f1 <<<"$(sed -e 's/^#//' <<<$line)")
-        cpkg=$(cut -d' ' -f2 <<<"$(sed -e 's/^#//' <<<$line)")
+        file=$(cut -d':' -f1 <<<"$(sed -e 's/^#//' <<<$line)")
+        cpkg=$(cut -d':' -f2 <<<"$(sed -e 's/^#//' <<<$line)")
         if grep -q '^#' <<<"$line" # with '#', we mean that we want to keep the old file
         then
             echo "Will keep old $file"
             rm_from_fakeroot $file "conflict"
         else
             echo "Will remove old $file"
-            if [ z"$cpkg" == z ]
+            if [ ! "$cpkg" ]
             then
                 sys_backup_file $file "conflict"
             else
