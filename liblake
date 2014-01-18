@@ -34,6 +34,12 @@ lake() {
     listfile=$verdir/$listname
     fakeroot=$verdir/sysroot/$arch
 
+    if [ "$cmd" == "print"  ]
+    then
+        echo $pkgfname: n: $pkgname v: $pkgver a: $arch
+        exit 0
+    fi
+
     if [ "$cmd" != "prepare" ] && ! is_ready
     then
         echo "$cmdfile not ready. Run \"lake prepare $pkg\" first"
