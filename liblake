@@ -48,19 +48,22 @@ lake() {
         exit 0
     fi
 
-    if [ "$cmd" != "prepare" ] && ! is_ready
-    then
-        echo "$pkgfname not ready. Run \"lake prepare $pkgfname\" first"
-        exit $E_NOTREADY
-    fi
-
-    case "_$cmd" in
+    case "_$cmd" in  # Commands that don't need $pkgfname to be ready
         _print)
             echo $pkgfname
             ;;
         _prepare)
             prepare_dir
             ;;
+    esac # If matched, will terminate here
+
+    if ! is_ready
+    then
+        echo "$pkgfname not ready. Run \"lake prepare $pkgfname\" first"
+        exit $E_NOTREADY
+    fi
+
+    case "_$cmd" in
         _createlist)
             create_list
             ;;
