@@ -27,6 +27,14 @@ lake() {
     fi
 
     pkgdir=$pkgs/$pkgname
+
+    if [[ z"$pkgver" == z ]]
+    then
+        echo "version not specified"
+        pkgver=$(get_latest)
+        echo using latest: $pkgver
+    fi
+
     verdir=$pkgdir/$pkgver
     pkgfname=${pkgname}-${pkgver}-${arch}
     cmdfile=$verdir/$pkgfname
@@ -69,7 +77,7 @@ lake() {
         _install)
             if [[ z"$pkgver" == z ]]
             then
-                echo "install: must specify version"
+                echo "install: no available version"
                 exit $E_WARGS
             fi
 
@@ -540,4 +548,18 @@ install_info_dir() {
     fi
 
     rm $list
+}
+
+get_latest() {
+    local latest
+    local ver
+    for ver in $pkgdir/*
+    do
+        ver=$(basename $ver)
+        if [[ $ver == [0-9]* ]] && [[ $latest < $ver ]]
+        then
+            latest=$ver
+        fi
+    done
+    echo $latest
 }
