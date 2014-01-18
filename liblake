@@ -42,7 +42,7 @@ lake() {
 
     if [ "$cmd" != "prepare" ] && ! is_ready
     then
-        echo "$cmdfile not ready. Run \"lake prepare $pkg\" first"
+        echo "$pkgfname not ready. Run \"lake prepare $pkgfname\" first"
         exit $E_NOTREADY
     fi
 
@@ -67,11 +67,18 @@ lake() {
         _backup)
             ;;
         _install)
+            if [[ z"$pkgver" == z ]]
+            then
+                echo "install: must specify version"
+                exit $E_WARGS
+            fi
+
             if [ -e $currents/$listname ]
             then
                 echo $pkgfname already installed
                 return 0
             fi
+
             create_list
             install_list $fakeroot $listfile
             ln -sv $listfile $currents ;;
@@ -155,7 +162,7 @@ gen_list() {
         exit $E_BADFILE
     fi
 
-    if [ $list -nt $dir ]
+    if [ "$list" -nt "$dir" ]
     then
         echo "$list newer than $dir, not updated"
         return 0
@@ -289,7 +296,17 @@ prepare_dir() {
 }
 
 is_ready() {
-    if [ -f $cmdfile ]
+    if [ ! -d $pkgdir ]
+    then
+        return 1
+    fi
+
+    if [ ! "$pkgver" ]
+    then
+        return 0
+    fi
+
+    if [ -d $fakeroot ]
     then
         return 0
     else
