@@ -1,0 +1,54 @@
+# Common variables and functions for package handlers
+
+if [ "z$_common_" != "zdefined" ]; then
+    _common_="defined"
+
+    # Error Codes
+    E_WARGS=1
+    E_BADDIR=85
+    E_BADFILE=86
+    E_BADARCH=87
+    E_NOTREADY=88
+
+    DEFAULT_ARCH=x86_64
+
+    # Default directories
+    pkgs=/var/pkgs
+    currents=$pkgs/current
+    infodir=/usr/share/info
+
+    check_commondirs() {
+        local dir
+        for dir in $pkgs $currents $infodir; do
+            if [ ! -e $dir ]; then
+                echo "$dir is not yet created"
+                mkdir $dir
+            elif [ ! -d $dir ]; then
+                echo "$dir exists, but not a directory. Exiting..."
+                exit $E_BADDIR
+            fi
+        done
+    }
+
+    mk_dir() {
+        if [ $# -ne 1 ]; then
+            return $E_WARGS
+        fi
+
+        local dir=$1
+        if [ ! -e $dir ]; then
+            if mkdir -p $dir; then
+                echo "created $dir"
+            else
+                echo "cannot create $dir. Exiting..."
+                exit $E_BADDIR
+            fi
+        elif [ ! -d $dir ]; then
+            echo "$dir not a directory"
+            exit $E_BADDIR
+        else
+            echo "directory $dir exists"
+        fi
+    }
+
+fi # End of if $_common_ not defined
