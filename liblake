@@ -40,7 +40,8 @@ lake() {
     cmdfile=$verdir/$pkgfname
     listname=${pkgfname}.list
     listfile=$verdir/$listname
-    fakeroot=$verdir/sysroot/$arch
+    sysroot=$verdir/sysroot
+    fakeroot=$sysroot/$arch
 
     if [ "$cmd" == "print"  ]
     then
@@ -91,6 +92,7 @@ lake() {
             fi
 
             create_list
+            cp $sysroot/$listname $listfile
             install_list $fakeroot $listfile
             ln -sv $listfile $currents ;;
         _remove)
@@ -326,7 +328,7 @@ is_ready() {
 }
 
 create_list() {
-    gen_list $fakeroot $listfile
+    gen_list $fakeroot $sysroot/$listname
 }
 
 mkcmd() {
