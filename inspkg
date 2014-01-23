@@ -1,0 +1,252 @@
+#!/bin/bash
+
+# Install a packed package. Read the file list, find collisions, install info file, copy $config to $config.new.1, run libtools, ldconfig
+
+. /usr/local/lib/liblake_common
+
+usage() {
+    echo "usage: installpkg packedpkg"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit E_WARGS
+fi
+
+if [ ! -e $1 ]; then
+    echo "$1 not exists"
+    exit E_BADDIR
+fi
+
+check_commondirs
+
+pkgfile=$(realpath $1)
+pf=$(basename $1)
+pf=${pf%.tar*}
+tmpdir=$pkgs/tmp/$pf
+listname=$pf.list
+
+mk_dir $tmpdir
+cd $tmpdir
+
+tar xf $pkgfile || exit $E_CMDFAILED
+
+if [ ! -e .LIST ]; then
+    echo ".LIST not found in package. Exiting"
+    exit $E_BADPKG
+fi
+
+cp .LIST .TMP
+
+check_collision .LIST # it handles etc collision automatically
+
+while read -u 4 file
+do
+    if [ ! -e $file ]
+    then
+        echo $file not found
+        exit $E_BADFILE
+    elif [ -d $file -a ! -L $file ]
+    then
+        mk_dir /$file
+    else
+        echo install $file
+        if [ -e /$file ]
+        then
+            echo /$file exists
+            handle_collision $file && cp --preserve=mode --no-dereference $file / || echo $file >> .FAILED
+        else
+            cp --preserve=mode --no-dereference $file /
+        fi
+    fi
+    sed -i "1d" .TMP
+done 4<.TMP
+
+if [ -f .INFO ]; then
+    install_info .INFO
+fi
+
+check_collision() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local list=$1
+    local file
+    local conffile=.CONFLICT
+    local conflict
+
+    rm $conffile
+
+    while read file
+    do
+        if [ ! -d $file -a -e $file ]
+        then
+            conflict=$(find_belongs $file)
+            if [ "$conflict" != "$pkgfname" ]
+            then
+                echo "$file : $conflict" >> $conffile
+            fi
+        fi
+    done <$list
+
+    if [ -f $conffile ] && [ "$(cut -d' ' -f1 <<<$(wc -l $conffile))" -gt "0" ]
+    then
+        vim $conffile &&
+        handle_conffile $conffile
+    fi
+}
+
+find_belongs() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local line=$(head -n1 <<< $(grep "^$1$" $currents/*))
+    local list=$(cut -d":" -f1 <<< "$line")
+
+    if [[ "z$list" == "z" ]]
+    then
+        return 0
+    fi
+
+    list=$(basename ${list%.*})
+
+    echo $list
+}
+
+handle_conffile() {
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+    local conffile=$1
+    local file
+    local cpkg
+
+    while read line
+    do
+        file=$(cut -d':' -f1 <<<"$(sed -e 's/^#//' <<<$line)")
+        cpkg=$(cut -d':' -f2 <<<"$(sed -e 's/^#//' <<<$line)")
+        if grep -q '^#' <<<"$line" # with '#', we mean that we want to keep the old file
+        then
+            echo "Will keep old $file"
+            rm_from_fakeroot $file "conflict"
+        else
+            echo "Will remove old $file"
+            if [ ! "$cpkg" ]
+            then
+                sys_backup_file $file "conflict"
+            else
+                recollect_file $file $cpkg "conflict"
+            fi
+        fi
+    done <$conffile
+}
+
+sys_backup_file() {
+    if [ $# -lt 2 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local name=$2
+
+    echo removing $file from system
+    tar rf $pkgs/backup/$name.tar $file &&
+    rm $file
+}
+
+rm_from_fakeroot() {
+    if [ $# -lt 2 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local name=$2
+
+    echo removing $file from $pkgfname
+    sed -i "\:^${file}$:d" $listfile &&
+
+    file=${file#/}
+    tar -C $fakeroot -rf $verdir/backup/$pkgfname-$name.tar $file &&
+    rm $fakeroot/$file
+}
+
+recollect_file() {
+    if [ $# -lt 3 ]
+    then
+        return $E_WARGS
+    fi
+
+    local file=$1
+    local p=$(cut -d'-' -f1 <<<"$2")
+    local v=$(cut -d'-' -f2 <<<"$2")
+    local a=$(cut -d'-' -f3 <<<"$2")
+    local f=$p-$v-$a
+    local vd=$pkgs/$p/$v
+    local list=$pkgs/$p/$v/${f}.list
+    local name=$3
+
+    echo removing $file from $p $v $a
+    sed -i "\:^${file}$:d" $list &&
+    tar rf $vd/backup/$f-$name.tar $file &&
+    rm $file
+}
+
+handle_collision() {  # this is not good enough
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
+
+    local conflict=$(find_belongs $1)
+
+    if [ z"$conflict" == z"${pkg}-${arch}" ]
+    then
+        return 0
+    fi
+
+    if [ "$conflict" ]
+    then
+        echo -n "$1 is in $conflict. Replace it? [y/n] "
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    sed -i "\%^$1$%d" $currents/${conflict}.list
+                    rm $1
+                    echo $1 removed from $conflict
+                    return 0 ;;
+                n|N)
+                    echo $1 kept in $conflict
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
+    else
+        echo -n "$1 is not found in any packages. Replace it? [y/n] "
+
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    rm $1
+                    echo $1 removed
+                    return 0 ;;
+                n|N)
+                    echo $1 kept
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
+    fi
+}
