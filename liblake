@@ -318,13 +318,6 @@ is_ready() {
     then
         return 0
     fi
-
-    if [ -d $fakeroot ]
-    then
-        return 0
-    else
-        return 1
-    fi
 }
 
 create_list() {
