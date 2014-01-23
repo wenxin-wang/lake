@@ -43,11 +43,10 @@ do
             ;;
         print|install|remove|create|createlist|backup|prepare|checkconflict)
             cmd=$arg
-            shift
+            ;;
+        *)
             pkglist="$@"
             break
-            ;;
-        *) echo "unknown instruction $1"; usage; exit $E_WARGS
             ;;
     esac
     shift

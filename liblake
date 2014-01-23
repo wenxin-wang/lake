@@ -175,12 +175,6 @@ gen_list() {
         exit $E_BADFILE
     fi
 
-    if [ "$list" -nt "$dir" ]
-    then
-        echo "$list newer than $dir, not updated"
-        return 0
-    fi
-
     find $dir > $list
     sed -i "s@^$dir@@" $list
     sed -i "/^$/d" $list
