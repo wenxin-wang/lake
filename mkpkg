@@ -5,7 +5,8 @@
 . /usr/local/lib/liblake_common
 
 usage() {
-    echo "usage: $(basename $0) cmdfile"
+    echo "usage: $(basename $0) [options] cmdfile"
+    echo "options: -n: no execute, take cmdfile as pkgfname"
 }
 
 gen_list() {
@@ -20,13 +21,24 @@ gen_list() {
     sed -i "/^$/d" $list
 }
 
-if [ $# -ne 1 ]; then
+case "$1" in
+    -h)
+        usage
+        exit
+        ;;
+    -n)
+        execute=no
+        shift
+        ;;
+esac
+
+if [ $# -lt 1 ]; then
     usage
     exit $E_WARGS
 fi
 
 if [ ! -e $1 ]; then
-    echo "$1 not exists"
+    echo "cmdfile $1 not exists"
     exit $E_BADDIR
 fi
 
