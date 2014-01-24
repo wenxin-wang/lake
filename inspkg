@@ -87,7 +87,6 @@ find_belongs() {
         return $E_WARGS
     fi
 
-    echo find_belongs
     local line=$(head -n1 <<< $(grep "^$1$" $currents/*)) # head seems to be some magic here that joins the lines?
     line=$(cut -d":" -f1 <<< "$line")
 
@@ -275,7 +274,6 @@ do
             cp --preserve=mode --no-dereference $file /$file
         fi
     fi
-    sed -i "1d" $list
 done 4<$list
 
 if [ -f $info ]; then
