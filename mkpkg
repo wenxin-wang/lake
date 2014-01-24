@@ -8,6 +8,18 @@ usage() {
     echo "usage: $(basename $0) cmdfile"
 }
 
+gen_list() {
+    if [ -e $list -a ! -f $list ]
+    then
+        echo "$file not a regular file"
+        exit $E_BADFILE
+    fi
+
+    find $dir > $list
+    sed -i "s@^$dir/@@" $list
+    sed -i "/^$/d" $list
+}
+
 if [ $# -ne 1 ]; then
     usage
     exit $E_WARGS
@@ -37,16 +49,4 @@ if [ ! -f $list ]; then
     exit $E_BADFILE
 fi
 
-tar -cf ${pf}.tar .LIST -C $dir . || exit $E_CMDFAILED
-
-gen_list() {
-    if [ -e $list -a ! -f $list ]
-    then
-        echo "$file not a regular file"
-        exit $E_BADFILE
-    fi
-
-    find $dir > $list
-    sed -i "s@^$dir/@@" $list
-    sed -i "/^$/d" $list
-}
+tar -cf ${pf}.tar $list -C $dir . || exit $E_CMDFAILED
