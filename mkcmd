@@ -56,6 +56,7 @@ function install_cmd()
 {
     make install
 }
+
 EOF
 
 cat >> $cmdfile <<EOF
@@ -64,6 +65,7 @@ function cleanup_cmd()
     cd \$build &&
     rm -r ${pkgname}/
 }
+
 EOF
 
 cat >> $cmdfile <<'EOF'
