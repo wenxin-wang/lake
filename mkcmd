@@ -13,11 +13,13 @@ if [ $# -ne 1 ]; then
 fi
 
 pkgfname=$1
+pkgname=${pkgfname%-*}
 cmdfile=$pkgfname
 
 cat >> $cmdfile <<EOF
-#/bin/bash
-pkgname=${pkgfname%-*}
+#!/bin/bash
+
+pkgname=$pkgname
 EOF
 
 cat >> $cmdfile <<'EOF'
@@ -25,8 +27,9 @@ basedir=$(pwd)
 logdir=$basedir/log
 logfile=$logdir/$pkgname
 fakeroot=$basedir/pkgroot
-. /usr/local/lib/build_funcs &&
+
 mkdir -p $logdir $fakeroot &&
+. /usr/local/lib/build_funcs &&
 
 function patch_cmd()
 {
@@ -35,7 +38,7 @@ function patch_cmd()
 
 function configure_cmd()
 {
-    ./configure --prefix=/tools \
+    ./configure --prefix=/usr
 }
 
 function make_cmd()
@@ -52,13 +55,17 @@ function install_cmd()
 {
     make install
 }
+EOF
 
+cat >> $cmdfile <<EOF
 function cleanup_cmd()
 {
-    cd $basedir &&
-    rm -r ${pkgname}
+    cd \$basedir &&
+    rm -r ${pkgname}/
 }
+EOF
 
+cat >> $cmdfile <<'EOF'
 cd $basedir &&
 tar xf ${pkgname}.tar &&
 #run_cmd "${logfile}-patch" 'patch_cmd' &&
@@ -67,4 +74,5 @@ run_cmd "${logfile}-make" 'make_cmd' &&
 run_cmd "${logfile}-check" 'check_cmd' &&
 run_cmd "${logfile}-install" 'install_cmd' &&
 #run_cmd "${logfile}-cleanup" 'cleanup_cmd' &&
+echo succeed || echo failed
 EOF
