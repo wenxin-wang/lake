@@ -221,7 +221,12 @@ pkgfile=$(realpath $1)
 pf=$(basename $1)
 pf=${pf%.pkg*}
 tmpdir=/tmp/$pf
-#listname=$pf.list
+listname=$pf.list
+
+if [ -e $currents/$listname ]; then
+    echo "$pf already installed. Skip it."
+    exit
+fi
 
 list=.LIST
 info=.INFO
@@ -281,6 +286,6 @@ if [ -f $etc ]; then
     install_etc $etc
 fi
 
-cp -v $list $currents/$pf.list
+cp -v $list $currents/$listname
 
 rm -r $tmpdir
