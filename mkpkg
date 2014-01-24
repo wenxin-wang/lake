@@ -45,8 +45,8 @@ if [ ! -e $1 ]; then
 fi
 
 cmdfile=$1
-pf=${cmdfile%.}
-pkg=${pf}.pkg
+pkgfname=${cmdfile%.}
+pkg=${pkgfname}.pkg
 dir=pkgroot
 list=.LIST
 

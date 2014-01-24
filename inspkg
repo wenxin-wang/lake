@@ -133,10 +133,10 @@ rm_from_pkg() {
     local file=$1
     local cf=$2
 
-    echo removing $file from $pf
+    echo removing $file from $pkgfname
     sed -i "\:^${file}$:d" $list &&
 
-    tar -rf $backupdir/$pf-$cf.tar $file &&
+    tar -rf $backupdir/$pkgfname-$cf.tar $file &&
     rm $file
 }
 
@@ -163,7 +163,7 @@ recollect_file() {
 
     echo removing /$file from $cf
     sed -i "\:^${file}$:d" $clist &&
-    tar rf $backupdir/$cf-$pf.tar /$file &&
+    tar rf $backupdir/$cf-$pkgfname.tar /$file &&
     rm /$file
 }
 
@@ -218,13 +218,13 @@ handle_collision() {  # this is not good enough
 # Definition finished. Now comes the main routine
 
 pkgfile=$(realpath $1)
-pf=$(basename $1)
-pf=${pf%.pkg*}
-tmpdir=/tmp/$pf
-listname=$pf.list
+pkgfname=$(basename $1)
+pkgfname=${pkgfname%.pkg*}
+tmpdir=/tmp/$pkgfname
+listname=$pkgfname.list
 
 if [ -e $currents/$listname ]; then
-    echo "$pf already installed. Skip it."
+    echo "$pkgfname already installed. Skip it."
     exit
 fi
 
