@@ -219,7 +219,7 @@ handle_collision() {  # this is not good enough
 pkgfile=$(realpath $1)
 pf=$(basename $1)
 pf=${pf%.tar*}
-tmpdir=$pkgs/tmp/$pf
+tmpdir=/tmp/$pf
 #listname=$pf.list
 
 list=.LIST
