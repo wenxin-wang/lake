@@ -20,75 +20,7 @@ fi
 
 check_commondirs
 
-pkgfile=$(realpath $1)
-pf=$(basename $1)
-pf=${pf%.tar*}
-tmpdir=$pkgs/tmp/$pf
-#listname=$pf.list
-
-list=.LIST
-info=.INFO
-etc=.ETC
-failed=.FAILED
-conflict=.CONFLICT
-
-mk_dir $tmpdir
-cd $tmpdir
-
-tar xf $pkgfile || exit $E_BADARCHIVE
-
-if [ ! -e $list ]; then
-    echo "$list not found in package. Exiting"
-    exit $E_BADPKG
-fi
-
-parse_list # it handles collision, check for infos and etcs
-
-while read -u 4 file # $file should be like "usr/lib/libfoo", without leading /
-do
-    if [ ! -e $file ]
-    then
-        echo $file not found
-        exit $E_BADFILE
-    elif [ -d $file ]; then
-        if [ -f /$file ]
-            echo "/$file is not a directory, but $file is. Exiting..."
-            exit $E_BADDIR
-        elif [ ! -L $file ]; then
-            mk_dir /$file
-        elif [ ! -e /$file ]; then
-            cp --preserve=mode --no-dereference $file /
-        else
-            echo "/$file is symlink to directory $(readlink /$file). Keep it."
-        fi
-    else
-        echo install $file
-        if [ -d /$file ]; then
-            echo "/$file is a directory, but $file is not. Exiting..."
-            exit $E_BADFILE
-        elif [ -e /$file ]; then
-            echo /$file exists
-            handle_collision $file && cp --preserve=mode --no-dereference $file / || echo $file >> $failed
-        else
-            cp --preserve=mode --no-dereference $file /
-        fi
-    fi
-    sed -i "1d" $list
-done 4<$list
-
-if [ -f $info ]; then
-    install_info $info
-fi
-
-if [ -f $etc ]; then
-    install_etc $etc
-fi
-
-cp $list $currents/$pf.list
-
-rm -r $tmpdir
-
-# Main finished. Now comes the definitions
+# Definitions. Main routine begins at line 219
 
 parse_list() {
     local file
@@ -281,3 +213,73 @@ handle_collision() {  # this is not good enough
         done
     fi
 }
+
+# Definition finished. Now comes the main routine
+
+pkgfile=$(realpath $1)
+pf=$(basename $1)
+pf=${pf%.tar*}
+tmpdir=$pkgs/tmp/$pf
+#listname=$pf.list
+
+list=.LIST
+info=.INFO
+etc=.ETC
+failed=.FAILED
+conflict=.CONFLICT
+
+mk_dir $tmpdir
+cd $tmpdir
+
+tar xf $pkgfile || exit $E_BADARCHIVE
+
+if [ ! -e $list ]; then
+    echo "$list not found in package. Exiting"
+    exit $E_BADPKG
+fi
+
+parse_list # it handles collision, check for infos and etcs
+
+while read -u 4 file # $file should be like "usr/lib/libfoo", without leading /
+do
+    if [ ! -e $file ]
+    then
+        echo $file not found
+        exit $E_BADFILE
+    elif [ -d $file ]; then
+        if [ -f /$file ]
+            echo "/$file is not a directory, but $file is. Exiting..."
+            exit $E_BADDIR
+        elif [ ! -L $file ]; then
+            mk_dir /$file
+        elif [ ! -e /$file ]; then
+            cp --preserve=mode --no-dereference $file /
+        else
+            echo "/$file is symlink to directory $(readlink /$file). Keep it."
+        fi
+    else
+        echo install $file
+        if [ -d /$file ]; then
+            echo "/$file is a directory, but $file is not. Exiting..."
+            exit $E_BADFILE
+        elif [ -e /$file ]; then
+            echo /$file exists
+            handle_collision $file && cp --preserve=mode --no-dereference $file / || echo $file >> $failed
+        else
+            cp --preserve=mode --no-dereference $file /
+        fi
+    fi
+    sed -i "1d" $list
+done 4<$list
+
+if [ -f $info ]; then
+    install_info $info
+fi
+
+if [ -f $etc ]; then
+    install_etc $etc
+fi
+
+cp $list $currents/$pf.list
+
+rm -r $tmpdir
