@@ -74,5 +74,5 @@ run_cmd "${logfile}-make" 'make_cmd' &&
 run_cmd "${logfile}-check" 'check_cmd' &&
 run_cmd "${logfile}-install" 'install_cmd' &&
 #run_cmd "${logfile}-cleanup" 'cleanup_cmd' &&
-echo succeed || echo failed
+echo succeed || { echo failed; exit 1; }
 EOF
