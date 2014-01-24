@@ -1,3 +1,51 @@
 #!/bin/bash
 
 # Remove a package from system
+
+. /usr/local/lib/liblake_common
+
+usage() {
+    echo "usage: $(basename $0) pkgfname"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit E_WARGS
+fi
+
+check_commondirs
+
+pkgfname=$1
+listname=${pkgfname}.list
+list=$currents/$listname
+
+if [ ! -e $list ]
+then
+    echo "Package $pkgfname not installed"
+    exit $E_NOTINSTALLED
+fi
+
+echo $list
+
+tac $list | while read file
+do
+    if [ ! -e /$file ]
+    then
+        echo /$file not found
+    elif [ -d /$file ]
+    then
+        if [ ! "$(ls -A /$file)" ]
+        then
+            echo remove /$file
+            rm -r /$file
+        else
+            echo directory /$file not empty, leave it alone
+        fi
+    else
+        echo remove /$file
+        rm /$file
+    fi
+    sed -i "$ d" $list
+done
+
+rm $list

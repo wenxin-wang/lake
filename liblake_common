@@ -12,6 +12,7 @@ if [ "z$_common_" != "zdefined" ]; then
     E_BADARCHIVE=89
     E_BADPKG=90
     E_CMDFAILED=91
+    E_NOTINSTALLED=92
 
     DEFAULT_ARCH=x86_64
 
