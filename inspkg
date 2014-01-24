@@ -12,12 +12,12 @@ usage() {
 
 if [ $# -ne 1 ]; then
     usage
-    exit E_WARGS
+    exit $E_WARGS
 fi
 
 if [ ! -e $1 ]; then
     echo "$1 not exists"
-    exit E_BADDIR
+    exit $E_BADDIR
 fi
 
 # Definitions. Main routine begins at line 219
