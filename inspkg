@@ -5,7 +5,7 @@
 . /usr/local/lib/liblake_common
 
 usage() {
-    echo "usage: installpkg packedpkg"
+    echo "usage: $(basename $0) packedpkg"
 }
 
 if [ $# -ne 1 ]; then
