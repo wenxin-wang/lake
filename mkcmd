@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Remove a package from system
+. /usr/local/lib/liblake_common
+
+usage() {
+    echo "usage: $(basename $0) pkgfname"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit E_WARGS
+fi
+
+pkgfname=$1
+cmdfile=$pkgfname
+
+cat >> $cmdfile <<EOF
+#/bin/bash
+pkgname=${pkgfname%-*}
+EOF
+
+cat >> $cmdfile <<'EOF'
+basedir=$(pwd)
+logdir=$basedir/log
+logfile=$logdir/$pkgname
+fakeroot=$basedir/pkgroot
+. /usr/local/lib/build_funcs &&
+mkdir -p $logdir $fakeroot &&
+
+function patch_cmd()
+{
+    :
+}
+
+function configure_cmd()
+{
+    ./configure --prefix=/tools \
+}
+
+function make_cmd()
+{
+    make -j4
+}
+
+function check_cmd()
+{
+    make check
+}
+
+function install_cmd()
+{
+    make install
+}
+
+function cleanup_cmd()
+{
+    cd $basedir &&
+    rm -r ${pkgname}
+}
+
+cd $basedir &&
+tar xf ${pkgname}.tar &&
+#run_cmd "${logfile}-patch" 'patch_cmd' &&
+run_cmd "${logfile}-conf" 'configure_cmd' &&
+run_cmd "${logfile}-make" 'make_cmd' &&
+run_cmd "${logfile}-check" 'check_cmd' &&
+run_cmd "${logfile}-install" 'install_cmd' &&
+#run_cmd "${logfile}-cleanup" 'cleanup_cmd' &&
+EOF
