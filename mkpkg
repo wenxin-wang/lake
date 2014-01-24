@@ -72,6 +72,10 @@ if [ ! -d $dir ]; then
     exit $E_BADDIR
 fi
 
+if [ -f $dir/$infodir/dir ]; then
+    rm $dir/$infodir/dir
+fi
+
 gen_list
 
 if [ ! -f $list ]; then
