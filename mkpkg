@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Make a packed package. Execute command file, generate file list, handle $info/dir. Maybe custom etcs?
+
+. /usr/local/lib/liblake_common
+
+usage() {
+    echo "usage: $(basename $0) cmdfile"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit $E_WARGS
+fi
+
+if [ ! -e $1 ]; then
+    echo "$1 not exists"
+    exit $E_BADDIR
+fi
+
+cmdfile=$1
+pf=${cmdfile%.}
+dir=pkgroot
+list=.LIST
+
+sh $cmdfile || exit $E_CMDFAILED
+
+if [ ! -d $dir ]; then
+    echo "$dir not a directory. Exiting..."
+    exit $E_BADDIR
+fi
+
+gen_list
+
+if [ ! -f $list ]; then
+    echo "$list not a file. Exiting..."
+    exit $E_BADFILE
+fi
+
+tar -cf ${pf}.tar .LIST -C $dir . || exit $E_CMDFAILED
+
+gen_list() {
+    if [ -e $list -a ! -f $list ]
+    then
+        echo "$file not a regular file"
+        exit $E_BADFILE
+    fi
+
+    find $dir > $list
+    sed -i "s@^$dir/@@" $list
+    sed -i "/^$/d" $list
+}
