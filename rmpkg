@@ -29,7 +29,7 @@ echo $list
 
 tac $list | while read file
 do
-    if [ ! -e /$file ]
+    if [ ! -e /$file -a ! -L /$file ]
     then
         echo /$file not found
     elif [ -d /$file ]
