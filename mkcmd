@@ -19,14 +19,15 @@ cmdfile=$pkgfname
 cat >> $cmdfile <<EOF
 #!/bin/bash
 
+pkgfname=$pkgfname
 pkgname=$pkgname
 EOF
 
 cat >> $cmdfile <<'EOF'
-basedir=$(pwd)
-logdir=$basedir/log
-logfile=$logdir/$pkgname
-fakeroot=$basedir/pkgroot
+build=$(pwd)
+logdir=$build/log
+logfile=$logdir/$pkgfname
+fakeroot=$build/pkgroot
 
 mkdir -p $logdir $fakeroot &&
 . /usr/local/lib/build_funcs &&
@@ -60,13 +61,13 @@ EOF
 cat >> $cmdfile <<EOF
 function cleanup_cmd()
 {
-    cd \$basedir &&
+    cd \$build &&
     rm -r ${pkgname}/
 }
 EOF
 
 cat >> $cmdfile <<'EOF'
-cd $basedir &&
+cd $build &&
 tar xf ${pkgname}.tar &&
 #run_cmd "${logfile}-patch" 'patch_cmd' &&
 run_cmd "${logfile}-conf" 'configure_cmd' &&
