@@ -4,6 +4,8 @@
 
 . /usr/local/lib/liblake_common
 
+check_commondirs
+
 usage() {
     echo "usage: $(basename $0) packedpkg"
 }
@@ -17,8 +19,6 @@ if [ ! -e $1 ]; then
     echo "$1 not exists"
     exit E_BADDIR
 fi
-
-check_commondirs
 
 # Definitions. Main routine begins at line 219
 

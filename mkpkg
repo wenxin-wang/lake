@@ -4,6 +4,8 @@
 
 . /usr/local/lib/liblake_common
 
+check_commondirs
+
 usage() {
     echo "usage: $(basename $0) [options] cmdfile"
     echo "options: -n: no execute, take cmdfile as pkgfname"
