@@ -55,7 +55,17 @@ if [ -e $pkg -o -e $pkg.bz2 ]; then
     exit
 fi
 
-sh $cmdfile || exit $E_CMDFAILED
+if [ _$execute != _no ]; then
+    if [ -e $dir ]; then
+        if [ ! -d $dir ]; then
+            echo $dir not a directory
+            exit $E_BADDIR
+        else
+            rm -r $dir
+        fi
+    fi
+    sh $cmdfile || exit $E_CMDFAILED
+fi
 
 if [ ! -d $dir ]; then
     echo "$dir not a directory. Exiting..."
