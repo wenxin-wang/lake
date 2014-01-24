@@ -44,8 +44,14 @@ fi
 
 cmdfile=$1
 pf=${cmdfile%.}
+pkg=${pf}.pkg
 dir=pkgroot
 list=.LIST
+
+if [ -e $pkg -o -e $pkg.bz2 ]; then
+    echo $pkg exists
+    exit
+fi
 
 sh $cmdfile || exit $E_CMDFAILED
 
@@ -61,5 +67,5 @@ if [ ! -f $list ]; then
     exit $E_BADFILE
 fi
 
-tar -cf ${pf}.tar $list -C $dir . || exit $E_CMDFAILED
-bzip2 -z ${pf}.tar || exit $E_CMDFAILED
+tar -cf $pkg $list -C $dir . || exit $E_CMDFAILED
+bzip2 -z $pkg || exit $E_CMDFAILED
