@@ -15,7 +15,7 @@ gen_list() {
         exit $E_BADFILE
     fi
 
-    find $dir > $list
+    find $dir/ > $list
     sed -i "s@^$dir/@@" $list
     sed -i "/^$/d" $list
 }

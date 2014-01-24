@@ -31,7 +31,7 @@ parse_list() {
     # check for info
     grep "\.info$" $list > $info
     # remove etcs from $list
-    grep "^etc/" > $etc
+    grep "^etc/" $list > $etc
     sed -i "\:^etc/:d" $list
 
     # now check for conflicts
@@ -87,6 +87,7 @@ find_belongs() {
         return $E_WARGS
     fi
 
+    echo find_belongs
     local line=$(head -n1 <<< $(grep "^$1$" $currents/*)) # head seems to be some magic here that joins the lines?
     line=$(cut -d":" -f1 <<< "$line")
 
@@ -247,13 +248,13 @@ do
         echo $file not found
         exit $E_BADFILE
     elif [ -d $file ]; then
-        if [ -f /$file ]
+        if [ -f /$file ]; then
             echo "/$file is not a directory, but $file is. Exiting..."
             exit $E_BADDIR
         elif [ ! -L $file ]; then
             mk_dir /$file
         elif [ ! -e /$file ]; then
-            cp --preserve=mode --no-dereference $file /
+            cp --preserve=mode --no-dereference $file /$file
         else
             echo "/$file is symlink to directory $(readlink /$file). Keep it."
         fi
@@ -264,9 +265,9 @@ do
             exit $E_BADFILE
         elif [ -e /$file ]; then
             echo /$file exists
-            handle_collision $file && cp --preserve=mode --no-dereference $file / || echo $file >> $failed
+            handle_collision $file && cp --preserve=mode --no-dereference $file /$file || echo $file >> $failed
         else
-            cp --preserve=mode --no-dereference $file /
+            cp --preserve=mode --no-dereference $file /$file
         fi
     fi
     sed -i "1d" $list
@@ -280,6 +281,6 @@ if [ -f $etc ]; then
     install_etc $etc
 fi
 
-cp $list $currents/$pf.list
+cp -v $list $currents/$pf.list
 
 rm -r $tmpdir
