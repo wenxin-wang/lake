@@ -118,6 +118,37 @@ parse_list() {
     fi
 }
 
+install_info() {
+    if [ -s $info ]; then
+        local infofile
+        echo "Updating $infodir/dir..."
+        while read infofile
+        do
+            install-info /$infofile $infodir/dir
+        done < $info
+        echo done
+    fi
+    rm $info
+}
+
+install_etc() {
+   if [ -s $etc ]; then
+       local config
+       echo "Installing config files in /etc"
+        while read config
+        do
+            if [ -e /$config ]; then
+                cp --preserve=mode --no-dereference $config /$config.new
+                echo "$config installed as /$config.new"
+            else
+                cp --preserve=mode --no-dereference $config /
+            fi
+        done < $etc
+        echo done
+   fi
+   rm $etc
+}
+
 find_belongs() {
     if [ $# -ne 1 ]
     then
