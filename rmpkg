@@ -10,7 +10,7 @@ usage() {
 
 if [ $# -ne 1 ]; then
     usage
-    exit E_WARGS
+    exit $E_WARGS
 fi
 
 check_commondirs
