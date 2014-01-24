@@ -16,14 +16,14 @@ pkgfname=$1
 pkgname=${pkgfname%-*}
 cmdfile=$pkgfname
 
-cat >> $cmdfile <<EOF
+cat >> $cmdfile <<EOF &&
 #!/bin/bash
 
 pkgfname=$pkgfname
 pkgname=$pkgname
 EOF
 
-cat >> $cmdfile <<'EOF'
+cat >> $cmdfile <<'EOF' &&
 build=$(pwd)
 logdir=$build/log
 logfile=$logdir/$pkgfname
@@ -59,7 +59,7 @@ function install_cmd()
 
 EOF
 
-cat >> $cmdfile <<EOF
+cat >> $cmdfile <<EOF &&
 function cleanup_cmd()
 {
     cd \$build &&
@@ -68,9 +68,11 @@ function cleanup_cmd()
 
 EOF
 
-cat >> $cmdfile <<'EOF'
+cat >> $cmdfile <<'EOF' &&
 cd $build &&
-tar xf ${pkgname}.tar &&
+EOF
+echo "tar xf ${pkgname}.tar. &&" >> $cmdfile &&
+cat >> $cmdfile <<'EOF'
 #run_cmd "${logfile}-patch" 'patch_cmd' &&
 run_cmd "${logfile}-conf" 'configure_cmd' &&
 run_cmd "${logfile}-make" 'make_cmd' &&
