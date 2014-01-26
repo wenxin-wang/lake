@@ -15,9 +15,33 @@ fi
 
 check_commondirs
 
+# Definitions. Main routine begins at line 219
+
+parse_list() {
+    local file
+
+    # check for info
+    grep "\.info$" $list > $info
+}
+
+rm_info() {
+    if [ -s $info ]; then
+        local infofile
+        echo "Updating $infodir/dir..."
+        while read infofile
+        do
+            echo "Remove $infofile"
+            install-info --remove /$infofile $infodir/dir
+        done < $info
+        echo done
+    fi
+    rm $info
+}
+
 pkgfname=$1
 listname=${pkgfname}.list
 list=$currents/$listname
+info=$(mktemp)
 
 if [ ! -e $list ]
 then
@@ -26,6 +50,12 @@ then
 fi
 
 echo $list
+
+parse_list
+
+if [ -f $info ]; then
+    rm_info $info
+fi
 
 tac $list | while read file
 do
