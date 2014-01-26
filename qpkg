@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Remove a package from system
+. /usr/local/lib/liblake_common
+check_commondirs
+
+usage() {
+    echo "usage: $(basename $0) file"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit E_WARGS
+fi
+
+grep "^${1#/}$" $currents/*
