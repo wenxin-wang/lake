@@ -2,6 +2,7 @@
 
 # Remove a package from system
 . /usr/local/lib/liblake_common
+check_commondirs
 
 usage() {
     echo "usage: $(basename $0) pkgfname"

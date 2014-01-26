@@ -3,7 +3,6 @@
 # Install a packed package. Read the file list, find collisions, install info file, copy $config to $config.new.1, run libtools, ldconfig
 
 . /usr/local/lib/liblake_common
-
 check_commondirs
 
 usage() {
