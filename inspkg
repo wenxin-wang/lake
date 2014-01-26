@@ -56,6 +56,7 @@ install_info() {
         echo "Updating $infodir/dir..."
         while read infofile
         do
+            echo $infofile
             install-info /$infofile $infodir/dir
         done < $info
         echo done
@@ -73,7 +74,8 @@ install_etc() {
                 cp --preserve=mode --no-dereference $config /$config.new
                 echo "$config installed as /$config.new"
             else
-                cp --preserve=mode --no-dereference $config /
+                cp --preserve=mode --no-dereference $config /$config
+                echo "$config installed"
             fi
         done < $etc
         echo done
