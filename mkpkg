@@ -60,7 +60,7 @@ if [ _$execute != _no ]; then
             echo $dir not a directory
             exit $E_BADDIR
         else
-            echo "$dir exists. Remove it?"
+            echo -n "$dir exists. Remove it? "
             read ans
             case "$ans" in
                 Y|y)
