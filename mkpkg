@@ -50,7 +50,6 @@ dir=pkgroot
 list=.LIST
 
 if [ -e $pkg.bz2 ]; then
-    echo $pkg.bz2 exists
     echo -n "$pkg.bz2 exists. Remove it? "
     read ans
     case "$ans" in
