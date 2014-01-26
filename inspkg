@@ -64,7 +64,7 @@ install_info() {
 install_etc() {
     if [ -s $etc ]; then
         local config
-        echo "------------Installing config files in /etc--"
+        echo "------------Installing config files in /etc------------"
         while read config
         do
             if [ -e /$config ]; then
@@ -75,7 +75,7 @@ install_etc() {
                 echo "$config installed"
             fi
         done < $etc
-        echo "------------Installed config files in /etc---"
+        echo "------------Installed config files in /etc-------------"
     fi
     rm $etc
 }
