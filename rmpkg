@@ -27,13 +27,13 @@ parse_list() {
 rm_info() {
     if [ -s $info ]; then
         local infofile
-        echo "Updating $infodir/dir..."
+        echo "------------Updating $infodir/dir------------"
         while read infofile
         do
             echo "Remove $infofile"
             install-info --remove /$infofile $infodir/dir
         done < $info
-        echo done
+        echo "------------Updated $infodir/dir-------------"
     fi
     rm $info
 }
