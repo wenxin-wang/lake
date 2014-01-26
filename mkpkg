@@ -49,9 +49,24 @@ pkg=${pkgfname}.pkg
 dir=pkgroot
 list=.LIST
 
-if [ -e $pkg -o -e $pkg.bz2 ]; then
+if [ -e $pkg.bz2 ]; then
     echo $pkg exists
-    exit
+    echo -n "$pkg exists. Remove it? "
+    read ans
+    case "$ans" in
+        Y|y)
+            rm $pkg
+            echo "$pkg removed."
+            ;;
+        N|n)
+            echo "Exiting..."
+            exit
+            ;;
+        *)
+            echo "Unknown cmd $ans. Exiting."
+            exit $E_BADRESPONSE
+            ;;
+    esac
 fi
 
 if [ _$execute != _no ]; then
