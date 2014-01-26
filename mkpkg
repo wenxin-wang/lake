@@ -61,7 +61,25 @@ if [ _$execute != _no ]; then
             echo $dir not a directory
             exit $E_BADDIR
         else
-            rm -r $dir
+            echo "$dir exists. Remove it?"
+            read ans
+            case "$ans" in
+                Y|y)
+                    rm -r $dir
+                    echo "$dir removed."
+                    ;;
+                N|n)
+                    echo "Exiting..."
+                    exit
+                    ;;
+                K|k)
+                    echo "$dir kept."
+                    ;;
+                *)
+                    echo "Unknown cmd $ans. Exiting."
+                    exit $E_BADRESPONSE
+                    ;;
+            esac
         fi
     fi
     sh $cmdfile || exit $E_CMDFAILED
