@@ -15,7 +15,7 @@ usage() {
 gen_list() {
     if [ -e $list -a ! -f $list ]
     then
-        quit "$file not a regular file" $E_BADFILE
+        quit "$list not a regular file" $E_BADFILE
     fi
 
     find $dir/ > $list
