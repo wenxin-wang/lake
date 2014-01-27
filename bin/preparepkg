@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Remove a package from system
+. /usr/local/lib/liblake_common
+check_commondirs
+
+usage() {
+    echo "usage: $(basename $0) pkgfname"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit E_WARGS
+fi
+
+pkgfname=$1
+cmdfile=$pkgfname
+arch=${pkgfname##*-}
+pkgver=${pkgfname%-$arch}
+pkgver=${pkgver##*-}
+pkgname=${pkgfname%-$pkgver-$arch}
+verdir=$pkgs/$pkgname/$pkgver
+
+if [ ! -d $verdir ]; then
+    if [ -e $verdir ]; then
+        echo "$verdir is not a directory"
+        exit $E_BADDIR
+    else
+        mk_dir $verdir
+    fi
+fi
+
+cd $verdir
+
+if [ ! -e $cmdfile ]; then
+    mkcmd $cmdfile
+fi
