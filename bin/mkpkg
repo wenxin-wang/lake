@@ -7,7 +7,9 @@
 
 usage() {
     echo "usage: $(basename $0) [options] cmdfile"
-    echo "options: -n: no execute, take cmdfile as pkgfname"
+    echo "-n: no execute, take cmdfile as pkgfname"
+    echo "-f: force=yes, force recompiling"
+    echo "-c: remove pkgroot and .LIST"
 }
 
 gen_list() {
@@ -22,25 +24,37 @@ gen_list() {
     sed -i "/^$/d" $list
 }
 
-case "$1" in
-    -h)
-        usage
-        exit
-        ;;
-    -n)
-        execute=no
-        shift
-        ;;
-esac
+execute=""
+force=""
+clean=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -n)
+            execute=no
+            ;;
+        -f)
+            force=yes
+            ;;
+        -c)
+            clean=yes
+            ;;
+        -*)
+            quit "Unknown option $1" $E_WARGS
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
 
 if [ $# -lt 1 ]; then
     usage
     exit $E_WARGS
-fi
-
-if [ ! -e $1 ]; then
-    echo "cmdfile $1 not exists"
-    exit $E_BADDIR
 fi
 
 cmdfile=$1
@@ -49,50 +63,61 @@ pkgfile=${pkgfname}.${pkg_suffix}
 dir=pkgroot
 list=.LIST
 
+if [ _$execute != _no ] && [ ! -e $1 ]; then
+        quit "cmdfile $1 not exists" $E_BADDIR
+fi
+
 if [ -e $pkgfile ]; then
-    echo -n "$pkgfile exists. Remove it? "
-    read ans
-    case "$ans" in
-        Y|y)
-            rm $pkgfile
-            echo "$pkgfile removed."
-            ;;
-        N|n)
-            echo "Exiting..."
-            exit
-            ;;
-        *)
-            echo "Unknown cmd $ans. Exiting."
-            exit $E_BADRESPONSE
-            ;;
-    esac
+    if [ "_$force" != "_yes" ]; then
+        echo -n "$pkgfile exists. Remove it? "
+        read ans
+        case "$ans" in
+            Y|y)
+                rm $pkgfile
+                echo "$pkgfile removed."
+                ;;
+            N|n)
+                echo "Exiting..."
+                exit
+                ;;
+            *)
+                echo "Unknown cmd $ans. Exiting."
+                exit $E_BADRESPONSE
+                ;;
+        esac
+    else
+        rm $pkgfile
+    fi
 fi
 
 if [ _$execute != _no ]; then
     if [ -e $dir ]; then
         if [ ! -d $dir ]; then
-            echo $dir not a directory
-            exit $E_BADDIR
+            quit "$dir not a directory" $E_BADDIR
         else
-            echo -n "$dir exists. Remove it? "
-            read ans
-            case "$ans" in
-                Y|y)
-                    rm -r $dir
-                    echo "$dir removed."
-                    ;;
-                N|n)
-                    echo "Exiting..."
-                    exit
-                    ;;
-                K|k)
-                    echo "$dir kept."
-                    ;;
-                *)
-                    echo "Unknown cmd $ans. Exiting."
-                    exit $E_BADRESPONSE
-                    ;;
-            esac
+            if [ "_$force" != "_yes" ]; then
+                echo -n "$dir exists. Remove it? "
+                read ans
+                case "$ans" in
+                    Y|y)
+                        rm -r $dir
+                        echo "$dir removed."
+                        ;;
+                    N|n)
+                        echo "Exiting..."
+                        exit
+                        ;;
+                    K|k)
+                        echo "$dir kept."
+                        ;;
+                    *)
+                        echo "Unknown cmd $ans. Exiting."
+                        exit $E_BADRESPONSE
+                        ;;
+                esac
+            else
+                rm -r $dir
+            fi
         fi
     fi
     sh $cmdfile || exit $E_CMDFAILED
@@ -115,3 +140,9 @@ if [ ! -f $list ]; then
 fi
 
 tar -cjf $pkgfile $list -C $dir . || exit $E_CMDFAILED
+
+if [ "_$clean" == "_yes" ]; then
+    echo "Removing $dir"
+    rm -r $dir
+    rm .LIST
+fi
