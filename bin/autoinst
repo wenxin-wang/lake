@@ -12,8 +12,8 @@ usage() {
     echo "-e: edit cmdfile before building"
 }
 
-mkcmd_opt=""
-mkpkg_opt=""
+mkcmd_opt="-n"
+mkpkg_opt="-c"
 inspkg_opt=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -22,10 +22,10 @@ while [ $# -gt 0 ]; do
             exit
             ;;
         -f)
-            mkpkg_opt="-f"
+            mkpkg_opt="$mkpkg_opt -f"
             ;;
         -e)
-            mkcmd_opt="-e"
+            mkcmd_opt="$mkcmd_opt -e"
             ;;
         -*)
             echo "Unknown option $1"
@@ -55,6 +55,7 @@ if [ ! -e $list ]; then
 fi
 
 while read -u 5 pkgfname; do
+    if grep -q "^#" <<< $pkgfname; then continue; fi
     verdir=$(preparepkg -d $pkgfname)
     if [ "z$verdir" = "z" ]; then
         echo "Cannot prepare $pkgfname"
@@ -62,6 +63,6 @@ while read -u 5 pkgfname; do
     fi
     cd $verdir
     mkcmd $mkcmd_opt $pkgfname || quit "mkcmd $mkcmd_opt $pkgfname failed!" $E_CMDFAILED
-    mkpkg $mkpkg_opt -c $pkgfname || quit "mkpkg $mkpkg_opt -c $pkgfname failed!" $E_CMDFAILED
+    mkpkg $mkpkg_opt $pkgfname || quit "mkpkg $mkpkg_opt -c $pkgfname failed!" $E_CMDFAILED
     inspkg $inspkg_opt $pkgfname.$pkg_suffix || quit "inspkg $inspkg_opt $pkgfname.$pkg_suffix failed!" $E_CMDFAILED
 done 5<$list
