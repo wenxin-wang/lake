@@ -7,7 +7,28 @@ check_commondirs
 
 usage() {
     echo "usage: $(basename $0) packedpkg"
+    echo "-f: force uninstall first if pkg installed"
 }
+
+force=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -f)
+            force=yes
+            ;;
+        -*)
+            quit "Unknown option $1" $E_WARGS
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
 
 if [ $# -ne 1 ]; then
     usage
@@ -221,7 +242,11 @@ tmpdir=/tmp/$pkgfname
 listname=$pkgfname.list
 
 if [ -e $currents/$listname ]; then
-    quit "$pkgfname already installed. Skip it." 0
+    if [ "_$force" == "_yes" ]; then
+        rmpkg $pkgfname
+    else
+        quit "$pkgfname already installed. Skip it." 0
+    fi
 fi
 
 list=.LIST
