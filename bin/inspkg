@@ -15,7 +15,7 @@ if [ $# -ne 1 ]; then
 fi
 
 if [ ! -e $1 ]; then
-    quit "$1 not exists" $E_BADDIR
+    quit "$1 does not exist" $E_BADFILE
 fi
 
 # Definitions. Main routine begins at line 219
@@ -133,150 +133,150 @@ rm_from_pkg() {
     echo removing $file from $pkgfname
     sed -i "\:^${file}$:d" $list &&
 
-        tar -rf $backupdir/$pkgfname-$cf.tar $file &&
-        rm $file
-    }
+    tar -rf $backupdir/$pkgfname-$cf.tar $file &&
+    rm $file
+}
 
-    sys_backup_file() {
-        if [ $# -lt 1 ] # $1 is the file to backup
-        then
-            return $E_WARGS
-        fi
+sys_backup_file() {
+    if [ $# -lt 1 ] # $1 is the file to backup
+    then
+        return $E_WARGS
+    fi
 
-        echo removing /$1 from system
-        tar rf $backupdir/conflict.tar /$1 &&
-            rm /$1
-    }
+    echo removing /$1 from system
+    tar rf $backupdir/conflict.tar /$1 &&
+        rm /$1
+}
 
-    recollect_file() {
-        if [ $# -lt 2 ]
-        then
-            return $E_WARGS
-        fi
+recollect_file() {
+    if [ $# -lt 2 ]
+    then
+        return $E_WARGS
+    fi
 
-        local file=$1
-        local cf=$2
-        local clist=$currents/${cf}.list
+    local file=$1
+    local cf=$2
+    local clist=$currents/${cf}.list
 
-        echo removing /$file from $cf
-        sed -i "\:^${file}$:d" $clist &&
-            tar rf $backupdir/$cf-$pkgfname.tar /$file &&
-            rm /$file
-    }
+    echo removing /$file from $cf
+    sed -i "\:^${file}$:d" $clist &&
+        tar rf $backupdir/$cf-$pkgfname.tar /$file &&
+        rm /$file
+}
 
-    handle_collision() {  # this is not good enough
-        if [ $# -ne 1 ]
-        then
-            return $E_WARGS
-        fi
+handle_collision() {  # this is not good enough
+    if [ $# -ne 1 ]
+    then
+        return $E_WARGS
+    fi
 
-        local conflict=$(find_belongs $1)
+    local conflict=$(find_belongs $1)
 
-        if [ "$conflict" ]
-        then
-            echo -n "$1 is in $conflict. Replace it? [y/n] "
-            while read command
-            do
-                case "$command" in
-                    y|Y)
-                        sed -i "\%^$1$%d" $currents/${conflict}.list
-                        rm $1
-                        echo $1 removed from $conflict
-                        return 0 ;;
-                    n|N)
-                        echo $1 kept in $conflict
-                        return 1 ;;
-                    *)
-                        echo "Do as I say!"
-                        continue ;;
-                esac
-            done
+    if [ "$conflict" ]
+    then
+        echo -n "$1 is in $conflict. Replace it? [y/n] "
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    sed -i "\%^$1$%d" $currents/${conflict}.list
+                    rm $1
+                    echo $1 removed from $conflict
+                    return 0 ;;
+                n|N)
+                    echo $1 kept in $conflict
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
+    else
+        echo -n "$1 is not found in any packages. Replace it? [y/n] "
+
+        while read command
+        do
+            case "$command" in
+                y|Y)
+                    rm $1
+                    echo $1 removed
+                    return 0 ;;
+                n|N)
+                    echo $1 kept
+                    return 1 ;;
+                *)
+                    echo "Do as I say!"
+                    continue ;;
+            esac
+        done
+    fi
+}
+
+# Definition finished. Now comes the main routine
+
+pkgfile=$(realpath $1)
+pkgfname=$(basename $1)
+pkgfname=${pkgfname%.pkg*}
+tmpdir=/tmp/$pkgfname
+listname=$pkgfname.list
+
+if [ -e $currents/$listname ]; then
+    quit "$pkgfname already installed. Skip it." 0
+fi
+
+list=.LIST
+info=.INFO
+etc=.ETC
+failed=.FAILED
+conflict=.CONFLICT
+
+mk_dir $tmpdir
+cd $tmpdir
+
+tar xf $pkgfile || exit $E_BADARCHIVE
+
+if [ ! -e $list ]; then
+    quit "$list not found in package. Exiting" $E_BADPKG
+fi
+
+parse_list # it handles collision, check for infos and etcs
+
+while read -u 4 file # $file should be like "usr/lib/libfoo", without leading /
+do
+    if [ ! -e $file ]
+    then
+        quit $file not found $E_BADFILE
+    elif [ -d $file ]; then
+        if [ -f /$file ]; then
+            quit "/$file is not a directory, but $file is. Exiting..." $E_BADDIR
+        elif [ ! -L $file ]; then
+            mk_dir /$file
+        elif [ ! -e /$file ]; then
+            cp --preserve=mode --no-dereference $file /$file
         else
-            echo -n "$1 is not found in any packages. Replace it? [y/n] "
-
-            while read command
-            do
-                case "$command" in
-                    y|Y)
-                        rm $1
-                        echo $1 removed
-                        return 0 ;;
-                    n|N)
-                        echo $1 kept
-                        return 1 ;;
-                    *)
-                        echo "Do as I say!"
-                        continue ;;
-                esac
-            done
+            echo "/$file is symlink to directory $(readlink /$file). Keep it."
         fi
-    }
-
-    # Definition finished. Now comes the main routine
-
-    pkgfile=$(realpath $1)
-    pkgfname=$(basename $1)
-    pkgfname=${pkgfname%.pkg*}
-    tmpdir=/tmp/$pkgfname
-    listname=$pkgfname.list
-
-    if [ -e $currents/$listname ]; then
-        quit "$pkgfname already installed. Skip it." 0
-    fi
-
-    list=.LIST
-    info=.INFO
-    etc=.ETC
-    failed=.FAILED
-    conflict=.CONFLICT
-
-    mk_dir $tmpdir
-    cd $tmpdir
-
-    tar xf $pkgfile || exit $E_BADARCHIVE
-
-    if [ ! -e $list ]; then
-        quit "$list not found in package. Exiting" $E_BADPKG
-    fi
-
-    parse_list # it handles collision, check for infos and etcs
-
-    while read -u 4 file # $file should be like "usr/lib/libfoo", without leading /
-    do
-        if [ ! -e $file ]
-        then
-            quit $file not found $E_BADFILE
-        elif [ -d $file ]; then
-            if [ -f /$file ]; then
-                quit "/$file is not a directory, but $file is. Exiting..." $E_BADDIR
-            elif [ ! -L $file ]; then
-                mk_dir /$file
-            elif [ ! -e /$file ]; then
-                cp --preserve=mode --no-dereference $file /$file
-            else
-                echo "/$file is symlink to directory $(readlink /$file). Keep it."
-            fi
+    else
+        echo install $file
+        if [ -d /$file ]; then
+            quit "/$file is a directory, but $file is not. Exiting..." $E_BADFILE
+        elif [ -e /$file ]; then
+            echo /$file exists
+            handle_collision $file && cp --preserve=mode --no-dereference $file /$file || echo $file >> $failed
         else
-            echo install $file
-            if [ -d /$file ]; then
-                quit "/$file is a directory, but $file is not. Exiting..." $E_BADFILE
-            elif [ -e /$file ]; then
-                echo /$file exists
-                handle_collision $file && cp --preserve=mode --no-dereference $file /$file || echo $file >> $failed
-            else
-                cp --preserve=mode --no-dereference $file /$file
-            fi
+            cp --preserve=mode --no-dereference $file /$file
         fi
-    done 4<$list
-
-    if [ -f $info ]; then
-        install_info $info
     fi
+done 4<$list
 
-    if [ -f $etc ]; then
-        install_etc $etc
-    fi
+if [ -f $info ]; then
+    install_info $info
+fi
 
-    cp -v $list $currents/$listname
+if [ -f $etc ]; then
+    install_etc $etc
+fi
 
-    rm -r $tmpdir
+cp -v $list $currents/$listname
+
+rm -r $tmpdir
