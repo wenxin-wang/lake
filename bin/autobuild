@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Read a list of packages, rebuild them if needed, and install them.
+
+. /usr/local/lib/liblake_common
+check_commondirs
+
+usage() {
+    echo "usage: $(basename $0) [options] pkglist"
+    echo "-f: force rebuild"
+}
+
+if [ $# -ne 1 ]; then
+    usage
+    exit $E_WARGS
+fi
+
+if [ ! -e $1 ]; then
+    echo "$1 not exists"
+    exit $E_BADDIR
+fi
+
+# Definitions. Main routine begins at line 
