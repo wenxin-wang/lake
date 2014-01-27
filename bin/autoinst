@@ -7,15 +7,20 @@ check_commondirs
 
 usage() {
     echo "usage: $(basename $0) [options] pkglist"
+    echo "-h: this help"
     echo "-f: force rebuild"
     echo "-e: edit cmdfile before building"
 }
 
 mkcmd_opt=""
 mkpkg_opt=""
-inpkg_opt=""
+inspkg_opt=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        -h)
+            usage
+            exit
+            ;;
         -f)
             mkpkg_opt="-f"
             ;;
@@ -56,4 +61,7 @@ while read -u 5 pkgfname; do
         exit $E_BADDIR
     fi
     cd $verdir
+    mkcmd $mkcmd_opt $pkgfname || quit "mkcmd $mkcmd_opt $pkgfname failed!" $E_CMDFAILED
+    mkpkg $mkpkg_opt -c $pkgfname || quit "mkpkg $mkpkg_opt -c $pkgfname failed!" $E_CMDFAILED
+    inspkg $inspkg_opt $pkgfname.$pkg_suffix || quit "inspkg $inspkg_opt $pkgfname.$pkg_suffix failed!" $E_CMDFAILED
 done 5<$list
