@@ -13,4 +13,4 @@ if [ $# -ne 1 ]; then
     exit E_WARGS
 fi
 
-grep "^${1#/}$" $currents/*
+grep "${1#/}" $currents/*
