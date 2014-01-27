@@ -16,6 +16,7 @@ if [ "z$_common_" != "zdefined" ]; then
     E_NOTINSTALLED=92
     E_BADRESPONSE=93
 
+    # Default variables
     DEFAULT_ARCH=x86_64
     
     if [ "z$EDITOR" == "z" ]; then
@@ -29,6 +30,9 @@ if [ "z$_common_" != "zdefined" ]; then
     currents=$pkgs/current
     backupdir=$pkgs/backup
     infodir=/usr/share/info
+
+    # Package variables
+    pkg_suffix=.pkg.bz2
 
     check_commondirs() {
         local dir
