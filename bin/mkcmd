@@ -19,6 +19,9 @@ while [ $# -gt 0 ]; do
         -e)
             edit=true
             ;;
+        -n)
+            overwite=no
+            ;;
         -*)
             quit "Unknown option $1" $E_WARGS
             ;;
@@ -38,14 +41,41 @@ pkgfname=$1
 pkgname=${pkgfname%-*}
 cmdfile=$pkgfname
 
-cat >> $cmdfile <<EOF &&
+write=yes
+if [ -e $cmdfile ]; then
+    if [ ! -f $cmdfile ]; then
+        quit "$cmdfile is not a file! Exiting..." $E_BADFILE
+    elif [ "_$overwite" != "_no" ]; then
+        echo "$cmdfile exists. What to do? Y/A: append O: overwrite N: do nothing"
+        read ans
+        case "$ans" in
+            Y|y|A|a)
+                ;;
+            O|o)
+                rm $cmdfile
+                ;;
+            N|n)
+                write=no
+                ;;
+            *)
+                quit "Unknown cmd $ans. Exiting." $E_BADRESPONSE
+                ;;
+        esac
+    else
+        write=no
+    fi
+fi
+
+
+if [ "_$write" == "_yes" ]; then
+    cat >> $cmdfile <<EOF &&
 #!/bin/bash
 
 pkgfname=$pkgfname
 pkgname=$pkgname
 EOF
 
-cat >> $cmdfile <<'EOF' &&
+    cat >> $cmdfile <<'EOF' &&
 build=$(pwd)
 logdir=$build/log
 logfile=$logdir/$pkgfname
@@ -81,7 +111,7 @@ function install_cmd()
 
 EOF
 
-cat >> $cmdfile <<EOF &&
+    cat >> $cmdfile <<EOF &&
 function cleanup_cmd()
 {
     cd \$build &&
@@ -90,12 +120,12 @@ function cleanup_cmd()
 
 EOF
 
-cat >> $cmdfile <<'EOF' &&
+    cat >> $cmdfile <<'EOF' &&
 cd $build &&
 EOF
-echo "tar xf ${pkgname}.tar. &&" >> $cmdfile &&
-echo "cd ${pkgname} &&" >> $cmdfile &&
-cat >> $cmdfile <<'EOF'
+    echo "tar xf ${pkgname}.tar. &&" >> $cmdfile &&
+    echo "cd ${pkgname} &&" >> $cmdfile &&
+    cat >> $cmdfile <<'EOF'
 #run_cmd "${logfile}-patch" 'patch_cmd' &&
 run_cmd "${logfile}-conf" 'configure_cmd' &&
 run_cmd "${logfile}-make" 'make_cmd' &&
@@ -104,6 +134,7 @@ run_cmd "${logfile}-install" 'install_cmd' &&
 #run_cmd "${logfile}-cleanup" 'cleanup_cmd' &&
 echo succeed || { echo failed; exit 1; }
 EOF
+fi
 
 if [ "_$edit" == "_true" ]; then
     $DEFAULT_EDITOR $cmdfile
