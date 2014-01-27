@@ -64,4 +64,9 @@ if [ "z$_common_" != "zdefined" ]; then
         fi
     }
 
+    quit() {
+        echo $1
+        exit 1
+    }
+
 fi # End of if $_common_ not defined
