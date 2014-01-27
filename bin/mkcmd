@@ -95,6 +95,7 @@ cat >> $cmdfile <<'EOF' &&
 cd $build &&
 EOF
 echo "tar xf ${pkgname}.tar. &&" >> $cmdfile &&
+echo "cd ${pkgname} &&" >> $cmdfile &&
 cat >> $cmdfile <<'EOF'
 #run_cmd "${logfile}-patch" 'patch_cmd' &&
 run_cmd "${logfile}-conf" 'configure_cmd' &&
