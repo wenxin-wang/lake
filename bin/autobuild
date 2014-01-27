@@ -8,16 +8,53 @@ check_commondirs
 usage() {
     echo "usage: $(basename $0) [options] pkglist"
     echo "-f: force rebuild"
+    echo "-e: edit cmdfile before building"
 }
 
-if [ $# -ne 1 ]; then
+mkcmd_opt=""
+mkpkg_opt=""
+inpkg_opt=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -f)
+            mkpkg_opt="-f"
+            shift
+            ;;
+        -e)
+            mkcmd_opt="-e"
+            shift
+            ;;
+        -*)
+            echo "Unknown option $1"
+            exit $E_WARGS
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ $# -lt 1 ]; then
     usage
     exit $E_WARGS
 fi
 
-if [ ! -e $1 ]; then
-    echo "$1 not exists"
-    exit $E_BADDIR
+# Definitions. Main routine begins at line
+
+
+
+list=$1
+
+if [ ! -e $list ]; then
+    echo "$list not exists"
+    exit $E_BADFILE
 fi
 
-# Definitions. Main routine begins at line 
+while read -u 5 pkgfname; do
+    arch=${pkgfname##*-}
+    pkgver=${pkgfname%-$arch}
+    pkgver=${pkgver##*-}
+    pkgname=${pkgfname%-$pkgver-$arch}
+    verdir=$pkgs/$pkgname/$pkgver
+    cd $verdir
+done 5<$list
