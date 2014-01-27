@@ -7,11 +7,12 @@ check_commondirs
 usage() {
     echo "usage: $(basename $0) pkgfname"
     echo "-h: this help"
-    echo "-e: call editor"
+    echo "-e: call editor. Cancels -n"
+    echo "-n: do thing"
 }
 
 edit=""
-overwite=""
+donothing=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -h)
@@ -19,10 +20,10 @@ while [ $# -gt 0 ]; do
             exit
             ;;
         -e)
-            edit=true
+            edit=yes
             ;;
         -n)
-            overwite=no
+            donothing=yes
             ;;
         -*)
             quit "Unknown option $1" $E_WARGS
@@ -34,6 +35,10 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+if [ "_$edit" == "_yes" ]; then
+    donothing=no
+fi
+
 if [ $# -ne 1 ]; then
     usage
     exit E_WARGS
@@ -43,33 +48,32 @@ pkgfname=$1
 pkgname=${pkgfname%-*}
 cmdfile=$pkgfname
 
-write=yes
-if [ -e $cmdfile ]; then
-    if [ ! -f $cmdfile ]; then
-        quit "$cmdfile is not a file! Exiting..." $E_BADFILE
-    elif [ "_$overwite" != "_no" ]; then
-        echo "$cmdfile exists. What to do? Y/A: append O: overwrite N: do nothing"
-        read ans
-        case "$ans" in
-            Y|y|A|a)
-                ;;
-            O|o)
-                rm $cmdfile
-                ;;
-            N|n)
-                write=no
-                ;;
-            *)
-                quit "Unknown cmd $ans. Exiting." $E_BADRESPONSE
-                ;;
-        esac
-    else
-        write=no
+if [ "_$donothing" != "_yes" ]; then
+    if [ -e $cmdfile ]; then
+        if [ ! -f $cmdfile ]; then
+            quit "$cmdfile is not a file! Exiting..." $E_BADFILE
+        else
+            echo "$cmdfile exists. What to do? Y/A: append O: overwrite N: do nothing"
+            read ans
+            case "$ans" in
+                Y|y|A|a)
+                    ;;
+                O|o)
+                    rm $cmdfile
+                    ;;
+                N|n)
+                    donothing=yes
+                    ;;
+                *)
+                    quit "Unknown cmd $ans. Exiting." $E_BADRESPONSE
+                    ;;
+            esac
+        fi
     fi
 fi
 
 
-if [ "_$write" == "_yes" ]; then
+if [ "_$donothing" != "_yes" ]; then
     cat >> $cmdfile <<EOF &&
 #!/bin/bash
 
@@ -138,6 +142,6 @@ echo succeed || { echo failed; exit 1; }
 EOF
 fi
 
-if [ "_$edit" == "_true" ]; then
+if [ "_$edit" == "_yes" ]; then
     $DEFAULT_EDITOR $cmdfile
 fi
