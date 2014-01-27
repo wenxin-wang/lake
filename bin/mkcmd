@@ -10,6 +10,8 @@ usage() {
     echo "-e: call editor"
 }
 
+edit=""
+overwite=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -h)

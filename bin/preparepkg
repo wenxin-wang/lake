@@ -10,6 +10,7 @@ usage() {
     echo "-d: dir only, no mkcmd"
 }
 
+dir_only=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -h)
