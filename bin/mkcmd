@@ -6,7 +6,29 @@ check_commondirs
 
 usage() {
     echo "usage: $(basename $0) pkgfname"
+    echo "-h: this help"
+    echo "-e: call editor"
 }
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -e)
+            edit=true
+            ;;
+        -*)
+            echo "Unknown option $1"
+            exit $E_WARGS
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
 
 if [ $# -ne 1 ]; then
     usage
@@ -82,3 +104,7 @@ run_cmd "${logfile}-install" 'install_cmd' &&
 #run_cmd "${logfile}-cleanup" 'cleanup_cmd' &&
 echo succeed || { echo failed; exit 1; }
 EOF
+
+if [ "_$edit" == "_true" ]; then
+    $DEFAULT_EDITOR $cmdfile
+fi
