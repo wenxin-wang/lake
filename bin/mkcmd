@@ -20,8 +20,7 @@ while [ $# -gt 0 ]; do
             edit=true
             ;;
         -*)
-            echo "Unknown option $1"
-            exit $E_WARGS
+            quit "Unknown option $1" $E_WARGS
             ;;
         *)
             break

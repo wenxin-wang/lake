@@ -34,6 +34,11 @@ if [ "z$_common_" != "zdefined" ]; then
     # Package variables
     pkg_suffix=pkg.bz2
 
+    quit() {
+        echo $1
+        exit $2
+    }
+
     check_commondirs() {
         local dir
         for dir in $pkgs $currents $infodir; do
@@ -41,8 +46,7 @@ if [ "z$_common_" != "zdefined" ]; then
                 echo "$dir is not yet created"
                 mkdir $dir
             elif [ ! -d $dir ]; then
-                echo "$dir exists, but not a directory. Exiting..."
-                exit $E_BADDIR
+                quit "$dir exists, but not a directory. Exiting..." $E_BADDIR
             fi
         done
     }
@@ -57,20 +61,13 @@ if [ "z$_common_" != "zdefined" ]; then
             if mkdir -p $dir; then
                 echo "created $dir"
             else
-                echo "cannot create $dir. Exiting..."
-                exit $E_BADDIR
+                quit "cannot create $dir. Exiting..." $E_BADDIR
             fi
         elif [ ! -d $dir ]; then
-            echo "$dir not a directory"
-            exit $E_BADDIR
+            quit "$dir not a directory" $E_BADDIR
         else
             echo "directory $dir exists"
         fi
-    }
-
-    quit() {
-        echo $1
-        exit $2
     }
 
 fi # End of if $_common_ not defined

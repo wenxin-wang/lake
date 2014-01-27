@@ -15,8 +15,7 @@ if [ $# -ne 1 ]; then
 fi
 
 if [ ! -e $1 ]; then
-    echo "$1 not exists"
-    exit $E_BADDIR
+    quit "$1 not exists" $E_BADDIR
 fi
 
 # Definitions. Main routine begins at line 219
@@ -222,8 +221,7 @@ rm_from_pkg() {
     listname=$pkgfname.list
 
     if [ -e $currents/$listname ]; then
-        echo "$pkgfname already installed. Skip it."
-        exit
+        quit "$pkgfname already installed. Skip it." 0
     fi
 
     list=.LIST
@@ -238,8 +236,7 @@ rm_from_pkg() {
     tar xf $pkgfile || exit $E_BADARCHIVE
 
     if [ ! -e $list ]; then
-        echo "$list not found in package. Exiting"
-        exit $E_BADPKG
+        quit "$list not found in package. Exiting" $E_BADPKG
     fi
 
     parse_list # it handles collision, check for infos and etcs
@@ -248,12 +245,10 @@ rm_from_pkg() {
     do
         if [ ! -e $file ]
         then
-            echo $file not found
-            exit $E_BADFILE
+            quit $file not found $E_BADFILE
         elif [ -d $file ]; then
             if [ -f /$file ]; then
-                echo "/$file is not a directory, but $file is. Exiting..."
-                exit $E_BADDIR
+                quit "/$file is not a directory, but $file is. Exiting..." $E_BADDIR
             elif [ ! -L $file ]; then
                 mk_dir /$file
             elif [ ! -e /$file ]; then
@@ -264,8 +259,7 @@ rm_from_pkg() {
         else
             echo install $file
             if [ -d /$file ]; then
-                echo "/$file is a directory, but $file is not. Exiting..."
-                exit $E_BADFILE
+                quit "/$file is a directory, but $file is not. Exiting..." $E_BADFILE
             elif [ -e /$file ]; then
                 echo /$file exists
                 handle_collision $file && cp --preserve=mode --no-dereference $file /$file || echo $file >> $failed

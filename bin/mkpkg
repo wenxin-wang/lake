@@ -15,8 +15,7 @@ usage() {
 gen_list() {
     if [ -e $list -a ! -f $list ]
     then
-        echo "$file not a regular file"
-        exit $E_BADFILE
+        quit "$file not a regular file" $E_BADFILE
     fi
 
     find $dir/ > $list
@@ -77,12 +76,10 @@ if [ -e $pkgfile ]; then
                 echo "$pkgfile removed."
                 ;;
             N|n)
-                echo "Exiting..."
-                exit
+                quit "Exiting..." 0
                 ;;
             *)
-                echo "Unknown cmd $ans. Exiting."
-                exit $E_BADRESPONSE
+                quit "Unknown cmd $ans. Exiting." $E_BADRESPONSE
                 ;;
         esac
     else
@@ -104,15 +101,13 @@ if [ _$execute != _no ]; then
                         echo "$dir removed."
                         ;;
                     N|n)
-                        echo "Exiting..."
-                        exit
+                        quit "Exiting..." 0
                         ;;
                     K|k)
                         echo "$dir kept."
                         ;;
                     *)
-                        echo "Unknown cmd $ans. Exiting."
-                        exit $E_BADRESPONSE
+                        quit "Unknown cmd $ans. Exiting." $E_BADRESPONSE
                         ;;
                 esac
             else
@@ -124,8 +119,7 @@ if [ _$execute != _no ]; then
 fi
 
 if [ ! -d $dir ]; then
-    echo "$dir not a directory. Exiting..."
-    exit $E_BADDIR
+    quit "$dir not a directory. Exiting..." $E_BADDIR
 fi
 
 if [ -f $dir/$infodir/dir ]; then
@@ -135,8 +129,7 @@ fi
 gen_list
 
 if [ ! -f $list ]; then
-    echo "$list not a file. Exiting..."
-    exit $E_BADFILE
+    quit "$list not a file. Exiting..." $E_BADFILE
 fi
 
 tar -cjf $pkgfile $list -C $dir . || exit $E_CMDFAILED
