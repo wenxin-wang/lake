@@ -7,14 +7,24 @@ check_commondirs
 usage() {
     echo "usage: $(basename $0) [options] pkgfname"
     echo "-h: this help"
+    echo "-d: dir only, no mkcmd"
 }
 
-case "$1" in
-    -h)
-        usage
-        exit
-        ;;
-esac
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -d)
+            dir_only=true
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
 
 if [ $# -ne 1 ]; then
     exit E_WARGS
@@ -38,7 +48,7 @@ fi
 
 cd $verdir
 
-if [ ! -e $cmdfile ]; then
+if [ "_$dir_only" != "_true" -a ! -e $cmdfile ]; then
     mkcmd $cmdfile
 fi
 
