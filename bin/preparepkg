@@ -5,11 +5,18 @@
 check_commondirs
 
 usage() {
-    echo "usage: $(basename $0) pkgfname"
+    echo "usage: $(basename $0) [options] pkgfname"
+    echo "-h: this help"
 }
 
+case "$1" in
+    -h)
+        usage
+        exit
+        ;;
+esac
+
 if [ $# -ne 1 ]; then
-    usage
     exit E_WARGS
 fi
 
@@ -23,10 +30,9 @@ verdir=$pkgs/$pkgname/$pkgver
 
 if [ ! -d $verdir ]; then
     if [ -e $verdir ]; then
-        echo "$verdir is not a directory"
         exit $E_BADDIR
     else
-        mk_dir $verdir
+        mkdir -p $verdir
     fi
 fi
 
@@ -35,3 +41,5 @@ cd $verdir
 if [ ! -e $cmdfile ]; then
     mkcmd $cmdfile
 fi
+
+echo $verdir
