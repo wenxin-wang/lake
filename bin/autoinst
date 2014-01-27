@@ -57,6 +57,7 @@ fi
 
 while read -u 5 pkgfname; do
     if grep -q "^#" <<< $pkgfname; then continue; fi
+    echo "============ $pkgfname          ============"
     verdir=$(preparepkg -d $pkgfname)
     if [ "z$verdir" = "z" ]; then
         echo "Cannot prepare $pkgfname"
@@ -66,4 +67,5 @@ while read -u 5 pkgfname; do
     mkcmd $mkcmd_opt $pkgfname || quit "mkcmd $mkcmd_opt $pkgfname failed!" $E_CMDFAILED
     mkpkg $mkpkg_opt $pkgfname || quit "mkpkg $mkpkg_opt -c $pkgfname failed!" $E_CMDFAILED
     inspkg $inspkg_opt $pkgfname.$pkg_suffix || quit "inspkg $inspkg_opt $pkgfname.$pkg_suffix failed!" $E_CMDFAILED
+    echo "============ $pkgfname finished ============"
 done 5<$list
