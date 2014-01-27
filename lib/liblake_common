@@ -32,7 +32,7 @@ if [ "z$_common_" != "zdefined" ]; then
     infodir=/usr/share/info
 
     # Package variables
-    pkg_suffix=.pkg.bz2
+    pkg_suffix=pkg.bz2
 
     check_commondirs() {
         local dir
