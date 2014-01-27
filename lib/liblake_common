@@ -1,3 +1,4 @@
+# vim: ft=sh
 # Common variables and functions for package handlers
 
 if [ "z$_common_" != "zdefined" ]; then
@@ -16,6 +17,12 @@ if [ "z$_common_" != "zdefined" ]; then
     E_BADRESPONSE=93
 
     DEFAULT_ARCH=x86_64
+    
+    if [ "z$EDITOR" == "z" ]; then
+        DEFAULT_EDITOR=vim
+    else
+        DEFAULT_EDITOR="$EDITOR"
+    fi
 
     # Default directories
     pkgs=/var/pkgs
