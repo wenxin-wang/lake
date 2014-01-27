@@ -23,6 +23,7 @@ while [ $# -gt 0 ]; do
             ;;
         -f)
             mkpkg_opt="$mkpkg_opt -f"
+            inspkg_opt="$inspkg_opt -f"
             ;;
         -e)
             mkcmd_opt="$mkcmd_opt -e"
