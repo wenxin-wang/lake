@@ -50,10 +50,10 @@ if [ ! -e $list ]; then
 fi
 
 while read -u 5 pkgfname; do
-    arch=${pkgfname##*-}
-    pkgver=${pkgfname%-$arch}
-    pkgver=${pkgver##*-}
-    pkgname=${pkgfname%-$pkgver-$arch}
-    verdir=$pkgs/$pkgname/$pkgver
+    verdir=$(preparepkg -d $pkgfname)
+    if [ "z$verdir" = "z" ]; then
+        echo "Cannot prepare $pkgfname"
+        exit $E_BADDIR
+    fi
     cd $verdir
 done 5<$list
