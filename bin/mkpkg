@@ -45,17 +45,17 @@ fi
 
 cmdfile=$1
 pkgfname=${cmdfile%.}
-pkg=${pkgfname}.pkg
+pkgfile=${pkgfname}.${pkg_suffix}
 dir=pkgroot
 list=.LIST
 
-if [ -e $pkg.bz2 ]; then
-    echo -n "$pkg.bz2 exists. Remove it? "
+if [ -e $pkgfile ]; then
+    echo -n "$pkgfile exists. Remove it? "
     read ans
     case "$ans" in
         Y|y)
-            rm $pkg.bz2
-            echo "$pkg.bz2 removed."
+            rm $pkgfile
+            echo "$pkgfile removed."
             ;;
         N|n)
             echo "Exiting..."
@@ -114,5 +114,4 @@ if [ ! -f $list ]; then
     exit $E_BADFILE
 fi
 
-tar -cf $pkg $list -C $dir . || exit $E_CMDFAILED
-bzip2 -z $pkg || exit $E_CMDFAILED
+tar -cjf $pkgfile $list -C $dir . || exit $E_CMDFAILED
