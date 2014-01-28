@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Make a cmdfile from an old file
+. /usr/local/lib/liblake_common
+check_commondirs
+
+usage() {
+    echo "usage: $(basename $0) oldcmdfile newcmdfile"
+    echo "-h: this help"
+    echo "-e: call editor. Cancels -n"
+}
+
+edit=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -e)
+            edit=yes
+            ;;
+        -*)
+            quit "Unknown option $1" $E_WARGS
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
+if [ $# -ne 2 ]; then
+    usage
+    exit E_WARGS
+fi
+
+oldcmd=$1
+cmdfile=$2
+
+if [ ! -f $oldcmd ]; then
+    quit "$oldcmd not a file. Exiting..." $E_BADFILE
+fi
+
+if [ -e $cmdfile ]; then
+    quit "$cmdfile exists. Exiting..." 0
+fi
+
+oa=${oldcmd##*-} # x86
+a=${cmdfile##*-} # x86_64
+op=${oldcmd%-*} # oldfoo-0.1
+p=${cmdfile%-*} # foo-0.2
+ov=${op##*-} # 0.1
+v=${p##*-} # 0.2
+on=${op%-$ov} # oldfoo
+n=${p%-$v} # foo
+
+echo $oa $a
+
+cp $oldcmd $cmdfile || quit "cp failed!" $E_CMDFAILED
+if [ "$oa" != "$a" ]; then
+    sed -i "s:$oa:$a:g" $cmdfile
+    case "$oa" in
+        x86)
+            case "$a" in
+                x86_64)
+                    sed -i -e "s:/lib\([ /]\):/lib64\1:g" \
+                        -e "s:/lib$:/lib64:g" \
+                        -e "s:BUILD32:BUILD64:g" \
+                        $cmdfile
+                    ;;
+            esac
+            ;;
+        x86_64)
+            case "$a" in
+                x86_64)
+                    sed -i -e "s:/lib64:/lib:g" \
+                        -e "s:BUILD64:BUILD32:g" \
+                        $cmdfile
+                    ;;
+            esac
+            ;;
+    esac
+fi
+if [ "$on" != "$n" ]; then
+    sed -i "s:$on:$n:g" $cmdfile
+fi
+if [ "$ov" != "$v" ]; then
+    sed -i "s:$ov:$v:g" $cmdfile
+fi
