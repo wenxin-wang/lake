@@ -64,7 +64,7 @@ if [ "$oa" != "$a" ]; then
         x86)
             case "$a" in
                 x86_64)
-                    sed -i -e "s:/lib\([ /]\):/lib64\1:g" \
+                    sed -i -e "/local/!s:/lib\([ /]\):/lib64\1:g" \
                         -e "s:/lib$:/lib64:g" \
                         -e "s:BUILD32:BUILD64:g" \
                         $cmdfile
