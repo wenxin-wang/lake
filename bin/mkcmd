@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Remove a package from system
+# Make a cmdfile for package
 . /usr/local/lib/liblake_common
 check_commondirs
 
